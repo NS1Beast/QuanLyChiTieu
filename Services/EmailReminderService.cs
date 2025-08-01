@@ -13,15 +13,20 @@ public class EmailReminderService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            using (var scope = _serviceProvider.CreateScope())
+            try
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<DataBase_DoAnContext>();
-
-                // Gọi Stored Procedure
-                await dbContext.Database.ExecuteSqlRawAsync("EXEC sp_GuiNhanNhocTheoThoiGian", stoppingToken);
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<DataBase_DoAnContext>();
+                    await dbContext.Database.ExecuteSqlRawAsync("EXEC sp_GuiNhanNhocTheoThoiGian", stoppingToken);
+                }
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex)
+            {
+                // Log lại lỗi thay vì để ứng dụng sập
+                Console.WriteLine($"Lỗi SQL: {ex.Message}");
             }
 
-            // Chờ 1 ngày trước khi chạy lại
             await Task.Delay(TimeSpan.FromDays(1), stoppingToken);
         }
     }

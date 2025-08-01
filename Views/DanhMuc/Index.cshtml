@@ -5,10 +5,26 @@
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
 }
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <div class="card">
     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <h4 class="mb-0">Danh sách Danh mục Chi tiêu</h4>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal" 
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal"
                 data-id="0" data-name="" data-color="#696cff" data-autoclassify="true">
             <i class="bi bi-plus-circle-fill me-2"></i>Thêm Danh mục mới
         </button>
@@ -17,50 +33,54 @@
         <table class="table table-hover table-striped mb-0">
             <thead>
                 <tr>
-                    <th>Màu sắc</th>
-                    <th>Tên Danh mục</th>
-                    <th class="text-center">Tự động phân loại (AI)</th>
-                    <th class="text-center">Hành động</th>
+                    <th style="width: 10%;">Màu sắc</th>
+                    <th style="width: 40%;">Tên Danh mục</th>
+                    <th class="text-center" style="width: 25%;">Tự động phân loại (AI)</th>
+                    <th class="text-center" style="width: 25%;">Hành động</th>
                 </tr>
             </thead>
             <tbody>
-                @if (Model.Any())
+                @if (Model != null && Model.Any())
                 {
                     @foreach (var item in Model)
                     {
-                                <tr>
-                                    <td><div class="color-preview" style="background-color: @item.MauSac;"></div></td>
-                                    <td class="fw-bold">@item.TenDanhMuc</td>
-                                    <td class="text-center">
+                        <tr>
+                            <td>
+                                <div class="color-preview" style="background-color: @item.MauSac;"></div>
+                            </td>
+                            <td class="fw-bold">@item.TenDanhMuc</td>
+                            <td class="text-center">
                                 @if (item.TuDongPhanLoai == true)
                                 {
-                                                <span class="badge bg-success">Đang bật</span>
+                                    <span class="badge bg-success">Đang bật</span>
                                 }
                                 else
                                 {
-                                                <span class="badge bg-secondary">Đã tắt</span>
+                                    <span class="badge bg-secondary">Đã tắt</span>
                                 }
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#categoryModal"
-                                                data-id="@item.Id" data-name="@item.TenDanhMuc" data-color="@item.MauSac" data-autoclassify="@item.TuDongPhanLoai.ToString().ToLower()" title="Sửa">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>
-                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#categoryModal"
+                                        data-id="@item.Id" data-name="@item.TenDanhMuc" data-color="@item.MauSac" data-autoclassify="@item.TuDongPhanLoai?.ToString().ToLower()" title="Sửa">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');">
                                     @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash3"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
                     }
                 }
                 else
                 {
-                        <tr>
-                            <td colspan="4" class="text-center p-4">
-                                <p class="mb-0 text-muted">Chưa có danh mục nào. Hãy tạo danh mục đầu tiên!</p>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="4" class="text-center p-4">
+                            <p class="mb-0 text-muted">Chưa có danh mục nào. Hãy tạo danh mục đầu tiên!</p>
+                        </td>
+                    </tr>
                 }
             </tbody>
         </table>
@@ -87,7 +107,7 @@
                         <input name="MauSac" id="categoryColor" type="color" class="form-control form-control-color" value="#696cff" />
                     </div>
                     <div class="form-check form-switch mb-3">
-                        <input name="TuDongPhanLoai" id="categoryAutoClassify" class="form-check-input" type="checkbox" value="true" checked>
+                        <input name="TuDongPhanLoai" id="categoryAutoClassify" class="form-check-input" type="checkbox" value="true">
                         <label class="form-check-label" for="categoryAutoClassify">Bật tính năng tự động phân loại bằng AI</label>
                     </div>
                     <input type="hidden" name="TuDongPhanLoai" value="false" />
@@ -102,43 +122,43 @@
 </div>
 
 @section Scripts {
-        <style>
-            .color-preview { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border-color); }
-        </style>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var categoryModal = document.getElementById('categoryModal');
-                categoryModal.addEventListener('show.bs.modal', function (event) {
-                    var button = event.relatedTarget;
-                    var id = button.getAttribute('data-id');
-                    var name = button.getAttribute('data-name');
-                    var color = button.getAttribute('data-color');
-                    // Lấy giá trị của Tự động phân loại
-                    var autoClassify = button.getAttribute('data-autoclassify') === 'true';
+    <style>
+        .color-preview {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var categoryModal = document.getElementById('categoryModal');
+            categoryModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var id = button.getAttribute('data-id');
+                var name = button.getAttribute('data-name');
+                var color = button.getAttribute('data-color');
+                var autoClassify = button.getAttribute('data-autoclassify') === 'true';
 
-                    var modalTitle = categoryModal.querySelector('.modal-title');
-                    var form = document.getElementById('categoryForm');
+                var modalTitle = categoryModal.querySelector('.modal-title');
+                var idInput = document.getElementById('categoryId');
+                var nameInput = document.getElementById('categoryName');
+                var colorInput = document.getElementById('categoryColor');
+                var autoClassifyInput = document.getElementById('categoryAutoClassify');
 
-                    var idInput = document.getElementById('categoryId');
-                    var nameInput = document.getElementById('categoryName');
-                    var colorInput = document.getElementById('categoryColor');
-                    // Lấy checkbox
-                    var autoClassifyInput = document.getElementById('categoryAutoClassify');
+                // Điền dữ liệu vào form
+                idInput.value = id;
+                nameInput.value = name;
+                colorInput.value = color;
+                autoClassifyInput.checked = autoClassify;
 
-                    idInput.value = id;
-                    nameInput.value = name;
-                    colorInput.value = color;
-                    // Cập nhật trạng thái của checkbox
-                    autoClassifyInput.checked = autoClassify;
-
-                    if (id > 0) {
-                        modalTitle.textContent = 'Chỉnh sửa Danh mục';
-                        form.action = '/DanhMuc/CreateOrEdit/' + id;
-                    } else {
-                        modalTitle.textContent = 'Thêm Danh mục mới';
-                        form.action = '/DanhMuc/CreateOrEdit';
-                    }
-                });
+                // Cập nhật tiêu đề modal dựa trên hành động
+                if (id && id > 0) {
+                    modalTitle.textContent = 'Chỉnh sửa Danh mục';
+                } else {
+                    modalTitle.textContent = 'Thêm Danh mục mới';
+                }
             });
-        </script>
+        });
+    </script>
 }

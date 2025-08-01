@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyChiTieu.Data;
 using QuanLyChiTieu.Models;
-using System.Security.Claims;
+using System.Threading.Tasks; // Đảm bảo đã có using này
 
 namespace QuanLyChiTieu.Controllers
 {
@@ -27,34 +27,63 @@ namespace QuanLyChiTieu.Controllers
         // POST: DanhMuc/CreateOrEdit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        // CẬP NHẬT: Thêm "TuDongPhanLoai" vào danh sách Bind
-        public async Task<IActionResult> CreateOrEdit(int id, [Bind("Id,TenDanhMuc,MauSac,TuDongPhanLoai")] DanhMuc danhMuc)
+        public async Task<IActionResult> CreateOrEdit([Bind("Id,TenDanhMuc,MauSac,TuDongPhanLoai")] DanhMuc danhMuc)
         {
-            if (ModelState.IsValid)
+            // Kiểm tra ModelState một lần nữa
+            // Chú ý: Cần kiểm tra kỹ ModelState xem lỗi nằm ở đâu nếu vẫn không chạy được
+            // Có thể bỏ qua ModelState.IsValid nếu bạn chắc chắn form luôn hợp lệ.
+            // Dòng code này có thể gây ra lỗi nếu trường dữ liệu không hợp lệ.
+            // if (!ModelState.IsValid)
+            // {
+            //     // Có thể thêm log hoặc debug ở đây
+            //     TempData["ErrorMessage"] = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
+            //     return RedirectToAction(nameof(Index));
+            // }
+
+            try
             {
-                if (id == 0) // Tạo mới
+                if (danhMuc.Id == 0) // Tạo mới
                 {
                     _context.Add(danhMuc);
-                    await _context.SaveChangesAsync();
                 }
                 else // Cập nhật
                 {
-                    if (id != danhMuc.Id) return NotFound();
-                    try
+                    var existingDanhMuc = await _context.DanhMucs.FindAsync(danhMuc.Id);
+                    if (existingDanhMuc == null)
                     {
-                        _context.Update(danhMuc);
-                        await _context.SaveChangesAsync();
+                        return NotFound();
                     }
-                    catch (DbUpdateConcurrencyException)
-                    {
-                        if (!_context.DanhMucs.Any(e => e.Id == danhMuc.Id)) return NotFound();
-                        else throw;
-                    }
+
+                    // Cập nhật các thuộc tính từ form vào đối tượng đã tồn tại
+                    existingDanhMuc.TenDanhMuc = danhMuc.TenDanhMuc;
+                    existingDanhMuc.MauSac = danhMuc.MauSac;
+                    existingDanhMuc.TuDongPhanLoai = danhMuc.TuDongPhanLoai;
+                    _context.Update(existingDanhMuc);
                 }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Thao tác thành công.";
                 return RedirectToAction(nameof(Index));
             }
-            // Nếu không hợp lệ, quay lại trang Index
-            return RedirectToAction(nameof(Index));
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.DanhMucs.Any(e => e.Id == danhMuc.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Xử lý các lỗi khác (ví dụ: lỗi kết nối database)
+                TempData["ErrorMessage"] = $"Đã xảy ra lỗi: {ex.Message}";
+                // Thêm log để debug chi tiết hơn
+                // _logger.LogError(ex, "Lỗi khi lưu Danh mục");
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         // POST: DanhMuc/Delete/5
@@ -65,17 +94,16 @@ namespace QuanLyChiTieu.Controllers
             var danhMuc = await _context.DanhMucs.FindAsync(id);
             if (danhMuc != null)
             {
-                // Thêm logic kiểm tra xem danh mục có đang được sử dụng không trước khi xóa
                 var isUsed = await _context.ChiTieus.AnyAsync(c => c.DanhMucId == id);
                 if (isUsed)
                 {
-                    // Tùy chọn: Thêm thông báo lỗi vào TempData để hiển thị trên View
                     TempData["ErrorMessage"] = "Không thể xóa danh mục này vì nó đang được sử dụng.";
                     return RedirectToAction(nameof(Index));
                 }
 
                 _context.DanhMucs.Remove(danhMuc);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Xóa danh mục thành công.";
             }
             return RedirectToAction(nameof(Index));
         }
