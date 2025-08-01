@@ -1,22 +1,42 @@
-﻿@model IEnumerable<QuanLyChiTieu.Models.GioiHanChiTieu>
+﻿@model IEnumerable<QuanLyChiTieu.ViewModels.GioiHanChiTieuItemViewModel>
 
 @{
     ViewData["Title"] = "Quản lý Hạn mức";
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
 }
 
+<!-- Hiển thị thông báo (nếu có) -->
+@if (ViewBag.SuccessMessage != null)
+{
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @ViewBag.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+         <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+}
+
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h4 class="mb-0">Hạn mức Chi tiêu hàng tháng</h4>
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h4 class="mb-0">Hạn mức Chi tiêu hàng tháng</h4>
+            <small class="text-muted">Đặt ra giới hạn để kiểm soát chi tiêu hiệu quả hơn.</small>
+        </div>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#limitModal">
             <i class="bi bi-plus-circle-fill me-2"></i>Thiết lập Hạn mức
         </button>
     </div>
     <div class="table-responsive">
-        <table class="table table-hover table-striped mb-0">
+        <table class="table table-hover table-striped mb-0 align-middle">
             <thead>
                 <tr>
                     <th>Tháng / Năm</th>
+                    <th>Trạng thái</th>
                     <th class="text-end">Hạn mức</th>
                     <th class="text-center">Hành động</th>
                 </tr>
@@ -26,11 +46,22 @@
                 {
                     @foreach (var item in Model)
                     {
+                        var phanTram = item.PhanTramDaDung > 100 ? 100 : item.PhanTramDaDung;
+                        var progressColor = phanTram > 85 ? "bg-danger" : (phanTram > 60 ? "bg-warning" : "bg-success");
                                 <tr>
-                                    <td class="fw-bold">Tháng @item.Thang / @item.Nam</td>
-                                    <td class="text-end text-success fw-bold">@item.SoTienToiDa.ToString("N0") ₫</td>
+                                    <td class="fw-bold">Tháng @item.GioiHan.Thang / @item.GioiHan.Nam</td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <small>Đã chi: @item.TongChiTieuThang.ToString("N0") ₫ (@item.PhanTramDaDung%)</small>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar @progressColor" role="progressbar" style="width: @phanTram%;" aria-valuenow="@phanTram"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end text-primary fw-bold">@item.GioiHan.SoTienToiDa.ToString("N0") ₫</td>
                                     <td class="text-center">
-                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hạn mức này?');">
+                                        <form asp-action="Delete" asp-route-id="@item.GioiHan.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hạn mức này?');">
+                                    @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash3"></i></button>
                                         </form>
                                     </td>
@@ -40,8 +71,9 @@
                 else
                 {
                         <tr>
-                            <td colspan="3" class="text-center p-4">
-                                 <p class="mb-0 text-muted">Bạn chưa đặt hạn mức nào. Hãy bắt đầu thiết lập!</p>
+                            <td colspan="4" class="text-center p-5">
+                                 <h5 class="mb-1">Chưa có hạn mức nào</h5>
+                                 <p class="mb-0 text-muted">Hãy bắt đầu bằng cách nhấn nút "Thiết lập Hạn mức" nhé!</p>
                             </td>
                         </tr>
                 }
@@ -50,10 +82,12 @@
     </div>
 </div>
 
+<!-- Modal Thêm/Sửa Hạn mức -->
 <div class="modal fade" id="limitModal" tabindex="-1" aria-labelledby="limitModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-controller="GioiHanChiTieu" asp-action="Set" method="post">
+                @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="limitModalLabel">Thiết lập Hạn mức</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -76,7 +110,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="SoTienToiDa" class="form-label">Số tiền tối đa (VNĐ)</label>
-                        <input name="SoTienToiDa" type="number" class="form-control" placeholder="VD: 10000000" required />
+                        <input name="SoTienToiDa" type="number" class="form-control" placeholder="VD: 10000000" required step="1000" min="0" />
                     </div>
                 </div>
                 <div class="modal-footer">
