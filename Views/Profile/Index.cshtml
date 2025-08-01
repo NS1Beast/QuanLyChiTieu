@@ -1,0 +1,97 @@
+﻿@model QuanLyChiTieu.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ của tôi";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    // Khởi tạo một model rỗng cho form đổi mật khẩu
+    var changePasswordModel = new QuanLyChiTieu.ViewModels.ChangePasswordViewModel();
+}
+
+@if (ViewBag.SuccessMessage != null)
+{
+        <div class="alert alert-success">@ViewBag.SuccessMessage</div>
+}
+@if (TempData["PasswordError"] != null)
+{
+        <div class="alert alert-danger">@TempData["PasswordError"]</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Thông tin cá nhân</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="UpdateProfile" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <input asp-for="Email" class="form-control" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="HoTen" class="form-label">Họ và Tên</label>
+                        <input asp-for="HoTen" class="form-control" />
+                        <span asp-validation-for="HoTen" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+             <div class="card-header">
+                <h5 class="card-title mb-0">Bảo mật & Mật khẩu</h5>
+            </div>
+            <div class="card-body">
+                <p>Để bảo vệ tài khoản, hãy sử dụng mật khẩu mạnh và thay đổi định kỳ.</p>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    Đổi Mật khẩu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="ChangePassword" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changePasswordModalLabel">Đổi Mật khẩu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="@changePasswordModel.OldPassword" class="form-label"></label>
+                        <input asp-for="@changePasswordModel.OldPassword" class="form-control" />
+                        <span asp-validation-for="@changePasswordModel.OldPassword" class="text-danger"></span>
+                    </div>
+                     <div class="mb-3">
+                        <label asp-for="@changePasswordModel.NewPassword" class="form-label"></label>
+                        <input asp-for="@changePasswordModel.NewPassword" class="form-control" />
+                        <span asp-validation-for="@changePasswordModel.NewPassword" class="text-danger"></span>
+                    </div>
+                     <div class="mb-3">
+                        <label asp-for="@changePasswordModel.ConfirmPassword" class="form-label"></label>
+                        <input asp-for="@changePasswordModel.ConfirmPassword" class="form-control" />
+                        <span asp-validation-for="@changePasswordModel.ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Gửi mã OTP</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,89 @@
+﻿@model IEnumerable<QuanLyChiTieu.Models.GioiHanChiTieu>
+
+@{
+    ViewData["Title"] = "Quản lý Hạn mức";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Hạn mức Chi tiêu hàng tháng</h4>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#limitModal">
+            <i class="bi bi-plus-circle-fill me-2"></i>Thiết lập Hạn mức
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Tháng / Năm</th>
+                    <th class="text-end">Hạn mức</th>
+                    <th class="text-center">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                                <tr>
+                                    <td class="fw-bold">Tháng @item.Thang / @item.Nam</td>
+                                    <td class="text-end text-success fw-bold">@item.SoTienToiDa.ToString("N0") ₫</td>
+                                    <td class="text-center">
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hạn mức này?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash3"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                    }
+                }
+                else
+                {
+                        <tr>
+                            <td colspan="3" class="text-center p-4">
+                                 <p class="mb-0 text-muted">Bạn chưa đặt hạn mức nào. Hãy bắt đầu thiết lập!</p>
+                            </td>
+                        </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="limitModal" tabindex="-1" aria-labelledby="limitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-controller="GioiHanChiTieu" asp-action="Set" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="limitModalLabel">Thiết lập Hạn mức</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                             <label for="Thang" class="form-label">Tháng</label>
+                             <select name="Thang" class="form-select" required>
+                                @for (int i = 1; i <= 12; i++)
+                                {
+                                         <option value="@i" selected="@(i == DateTime.Now.Month)">Tháng @i</option>
+                                }
+                             </select>
+                        </div>
+                         <div class="col-6 mb-3">
+                             <label for="Nam" class="form-label">Năm</label>
+                             <input name="Nam" type="number" class="form-control" value="@DateTime.Now.Year" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="SoTienToiDa" class="form-label">Số tiền tối đa (VNĐ)</label>
+                        <input name="SoTienToiDa" type="number" class="form-control" placeholder="VD: 10000000" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu lại</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

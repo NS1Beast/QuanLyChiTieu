@@ -1,0 +1,199 @@
+﻿@model QuanLyChiTieu.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Bảng điều khiển";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h4 class="fw-bold mb-0">Chào mừng trở lại, @User.Identity.Name! 👋</h4>
+        <small class="text-muted">Đây là tổng quan tài chính của bạn trong tháng này.</small>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickAddModal">
+        <i class="bi bi-plus-circle-fill me-2"></i>Thêm nhanh Chi tiêu
+    </button>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-1">Chi tiêu tháng này</h6>
+                        <h4 class="card-title mb-1">@Model.TongChiThangNay.ToString("N0") ₫</h4>
+                    </div>
+                    <div class="stat-icon-sm bg-primary-soft text-primary">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                </div>
+                @if (Model.HanMucThangNay > 0)
+                {
+                    // SỬA LỖI: Tránh trường hợp chia cho 0 nếu HanMucThangNay = 0
+                    var phanTramDaDung = Model.HanMucThangNay > 0 ? (int)Math.Round((Model.TongChiThangNay / Model.HanMucThangNay) * 100) : 0;
+                    if (phanTramDaDung > 100) { phanTramDaDung = 100; }
+                    var phanTramConLai = 100 - phanTramDaDung;
+
+                        <div class="progress mt-3" style="height: 8px;" title="Hạn mức: @Model.HanMucThangNay.ToString("N0") ₫">
+                            <div class="progress-bar @(phanTramDaDung > 85 ? "bg-danger" : "bg-primary")" role="progressbar" style="width: @(phanTramDaDung)%;" aria-valuenow="@phanTramDaDung" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Đã dùng @phanTramDaDung% hạn mức. Còn lại: @phanTramConLai%.</small>
+                }
+                else
+                {
+                        <small class="text-muted mt-3 d-block"><a asp-controller="GioiHanChiTieu" asp-action="Index">Đặt hạn mức</a> cho tháng này.</small>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3"> <div class="card stat-card h-100"> <div class="card-body"> <div class="d-flex justify-content-between align-items-start"> <div> <h6 class="card-subtitle mb-1">Chi tiêu hôm nay</h6> <h4 class="card-title mb-0">@Model.ChiTieuHomNay.ToString("N0") ₫</h4> </div> <div class="stat-icon-sm bg-success-soft text-success"> <i class="bi bi-calendar-day"></i> </div> </div> </div> </div> </div>
+    <div class="col-sm-6 col-xl-3"> <div class="card stat-card h-100"> <div class="card-body"> <div class="d-flex justify-content-between align-items-start"> <div> <h6 class="card-subtitle mb-1">Số giao dịch</h6> <h4 class="card-title mb-0">@Model.SoGiaoDichThangNay</h4> </div> <div class="stat-icon-sm bg-warning-soft text-warning"> <i class="bi bi-receipt"></i> </div> </div> </div> </div> </div>
+    <div class="col-sm-6 col-xl-3"> <div class="card stat-card h-100"> <div class="card-body"> <div class="d-flex justify-content-between align-items-start"> <div> <h6 class="card-subtitle mb-1">Mục chi nhiều nhất</h6> <h4 class="card-title mb-0 text-truncate" title="@Model.DanhMucChiNhieuNhat">@Model.DanhMucChiNhieuNhat</h4> </div> <div class="stat-icon-sm bg-info-soft text-info"> <i class="bi bi-tag-fill"></i> </div> </div> </div> </div> </div>
+</div>
+
+<div class="row g-4 mb-4"> <div class="col-xl-8"> <div class="card h-100"> <div class="card-header"><h5 class="card-title mb-0">Tổng quan chi tiêu 7 ngày gần nhất</h5></div> <div class="card-body"><canvas id="barChart" style="min-height: 300px;"></canvas></div> </div> </div> <div class="col-xl-4"> <div class="card h-100"> <div class="card-header"><h5 class="card-title mb-0">Phân bổ chi tiêu tháng này</h5></div> <div class="card-body"><canvas id="pieChart" style="min-height: 300px;"></canvas></div> </div> </div> </div>
+<div class="row g-4"> <div class="col-lg-8"> <div class="card h-100"> <div class="card-header d-flex justify-content-between align-items-center"> <h5 class="card-title mb-0">Giao dịch gần đây</h5> <a asp-controller="ChiTieu" asp-action="Index" class="btn btn-sm btn-outline-primary">Xem tất cả</a> </div> <div class="table-responsive"> <table class="table table-hover mb-0"> <thead> <tr> <th>Tên chi tiêu</th> <th>Danh mục</th> <th>Ngày chi</th> <th class="text-end">Số tiền</th> </tr> </thead> <tbody> @if (Model.GiaoDichGanDay.Any())
+                        { @foreach (var item in Model.GiaoDichGanDay)
+                            {
+                                <tr> <td>@item.TenChiTieu</td> <td><span class="badge" style="background-color:@item.DanhMuc.MauSac">@item.DanhMuc.TenDanhMuc</span></td> <td>@($"{item.NgayChi:dd/MM/yyyy}")</td> <td class="text-end text-danger fw-bold">- @item.SoTien.ToString("N0") ₫</td> </tr>
+                            }          }
+                        else
+                        {
+                            <tr> <td colspan="4" class="text-center p-4"> <p class="mb-0 text-muted">Chưa có giao dịch nào gần đây.</p> </td> </tr>
+                        } </tbody> </table> </div> </div> </div> <div class="col-lg-4"> <div class="card h-100"> <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Gợi ý từ AI</h5></div> <div class="card-body"> <h6>Đề xuất phân bổ ngân sách</h6> <p class="text-muted small">Dựa trên chi tiêu trung bình trong 1 tháng qua, đây là gợi ý cho tháng tới:</p> @if (Model.DeXuatAI != null && Model.DeXuatAI.Any())
+                {
+                    var totalDeXuat = Model.DeXuatAI.Sum(d => d.Value); foreach (var dexuat in Model.DeXuatAI.OrderByDescending(d => d.Value))
+                    {
+                        var percent = totalDeXuat > 0 ? (int)Math.Round((dexuat.Value / totalDeXuat) * 100) : 0;
+                        <div class="mb-3"> <div class="d-flex justify-content-between"> <span>@dexuat.Key</span> <strong>@dexuat.Value.ToString("N0") ₫</strong> </div> <div class="progress mt-1" style="height: 6px;"> <div class="progress-bar" role="progressbar" style="width: @percent%;" aria-valuenow="@percent"></div> </div> </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-center mt-3 text-muted">Chưa đủ dữ liệu để đưa ra đề xuất.</p>
+                } </div> </div> </div> </div>
+
+<div class="modal fade" id="quickAddModal" tabindex="-1" aria-labelledby="quickAddModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddModalLabel">Thêm nhanh Chi tiêu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAddForm" asp-controller="ChiTieu" asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label for="modal_TenChiTieu" class="form-label">Tên chi tiêu</label>
+                        <input name="TenChiTieu" id="modal_TenChiTieu" class="form-control" required />
+                    </div>
+                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modal_SoTien" class="form-label">Số tiền</label>
+                            <input name="SoTien" id="modal_SoTien" class="form-control" type="number" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                             <label for="modal_NgayChi" class="form-label">Ngày chi</label>
+                             <input name="NgayChi" id="modal_NgayChi" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal_DanhMucId" class="form-label">Danh mục</label>
+                        <select name="DanhMucId" id="modal_DanhMucId" class="form-select" asp-items="@(new SelectList(Model.TatCaDanhMuc, "Id", "TenDanhMuc"))" required></select>
+                    </div>
+                </form>
+                 <div id="quickAddResult" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" id="submitQuickAdd" class="btn btn-primary">Lưu lại</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(67, 89, 113, 0.15); }
+            .stat-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+            .stat-card .card-title { font-weight: 700; color: var(--heading-color); }
+            .stat-card .card-subtitle { font-size: 0.85rem; color: var(--text-color); }
+            .stat-icon-sm { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.2rem; }
+            .text-truncate { max-width: 150px; }
+            .table .badge { color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); font-weight: 500; }
+            .bg-success-soft { background-color: rgba(40, 199, 111, 0.1); } .text-success { color: #28c76f !important; }
+            .bg-warning-soft { background-color: rgba(255, 171, 0, 0.1); } .text-warning { color: #ffab00 !important; }
+            .bg-info-soft { background-color: rgba(0, 207, 232, 0.1); } .text-info { color: #00cfe8 !important; }
+            .bg-primary-soft { background-color: rgba(105, 108, 255, 0.1); } .text-primary { color: #696cff !important; }
+        </style>
+        <script>
+            // --- CODE BIỂU ĐỒ (GIỮ NGUYÊN) ---
+            const data7Ngay = JSON.parse('@Html.Raw(Model.JsonChiTieu7NgayGanNhat)');
+            const dataDanhMuc = JSON.parse('@Html.Raw(Model.JsonChiTieuTheoDanhMuc)');
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            new Chart(barCtx, { type: 'bar', data: { labels: data7Ngay.labels, datasets: [{ label: 'Tổng chi (VNĐ)', data: data7Ngay.data, backgroundColor: 'rgba(105, 108, 255, 0.7)', borderColor: 'rgba(105, 108, 255, 1)', borderWidth: 1, borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { callback: value => new Intl.NumberFormat('vi-VN').format(value) } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.dataset.label}: ${new Intl.NumberFormat('vi-VN').format(context.raw)} ₫` } } } } });
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            new Chart(pieCtx, { type: 'doughnut', data: { labels: dataDanhMuc.labels, datasets: [{ label: 'Chi tiêu', data: dataDanhMuc.data, backgroundColor: dataDanhMuc.colors, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: context => `${context.label}: ${new Intl.NumberFormat('vi-VN').format(context.raw)} ₫` } } } } });
+
+            // ===== SCRIPT CHO MODAL THÊM NHANH =====
+            document.getElementById('submitQuickAdd').addEventListener('click', function() {
+                const form = document.getElementById('quickAddForm');
+                const resultDiv = document.getElementById('quickAddResult');
+
+                if (form.checkValidity()) {
+                    const formData = new FormData(form);
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': token },
+                        body: new URLSearchParams(formData)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            resultDiv.innerHTML = '<div class="alert alert-success">Thêm chi tiêu thành công! Trang sẽ được tải lại...</div>';
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                             resultDiv.innerHTML = '<div class="alert alert-danger">Đã có lỗi xảy ra. Vui lòng thử lại.</div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        resultDiv.innerHTML = '<div class="alert alert-danger">Lỗi kết nối. Vui lòng kiểm tra lại.</div>';
+                    });
+                } else {
+                    form.reportValidity();
+                }
+            });
+
+            // ===== TÍCH HỢP AI GỢI Ý DANH MỤC VÀO MODAL =====
+            const modalTenChiTieuInput = document.getElementById('modal_TenChiTieu');
+            const modalDanhMucSelect = document.getElementById('modal_DanhMucId');
+            let modalTimeout = null;
+
+            modalTenChiTieuInput.addEventListener('keyup', function() {
+                clearTimeout(modalTimeout);
+                modalTimeout = setTimeout(function() {
+                    const query = modalTenChiTieuInput.value;
+                    if (query.length > 2) {
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                        fetch('@Url.Action("SuggestCategory", "ChiTieu")', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'RequestVerificationToken': token
+                            },
+                            body: 'query=' + encodeURIComponent(query)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                modalDanhMucSelect.value = data.categoryId;
+                            }
+                        });
+                    }
+                }, 500); 
+            });
+        </script>
+}

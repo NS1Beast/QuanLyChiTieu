@@ -1,0 +1,45 @@
+﻿@model QuanLyChiTieu.ViewModels.SettingsViewModel
+@{
+    ViewData["Title"] = "Cài đặt nhắc nhở";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Cài đặt nhận Email nhắc nhở</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Index" method="post">
+                    @if (ViewBag.SuccessMessage != null)
+                    {
+                            <div class="alert alert-success">@ViewBag.SuccessMessage</div>
+                    }
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="NhanEmailNhacNho" class="form-check-input" type="checkbox" role="switch" />
+                        <label asp-for="NhanEmailNhacNho" class="form-check-label">Bật/Tắt nhận email nhắc nhở</label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="TanSuatNhanNhac" class="form-label">Tần suất</label>
+                        <select asp-for="TanSuatNhanNhac" class="form-select">
+                            <option value="HangNgay">Hàng ngày</option>
+                            <option value="HangTuan">Hàng tuần</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="GioNhanNhac" class="form-label">Thời gian nhận</label>
+                        <input asp-for="GioNhanNhac" type="time" class="form-control" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Lưu cài đặt</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

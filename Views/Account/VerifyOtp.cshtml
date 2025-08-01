@@ -1,0 +1,23 @@
+﻿@model QuanLyChiTieu.ViewModels.VerifyOtpViewModel
+@{
+    ViewData["Title"] = "Xác thực OTP";
+    Layout = "~/Views/Shared/_LayoutLanding.cshtml";
+}
+
+<h2>Xác thực tài khoản</h2>
+<p>Một mã OTP đã được gửi đến email <strong>@Model.Email</strong>. Vui lòng kiểm tra và nhập vào ô bên dưới.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="VerifyOtp" method="post">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input type="hidden" asp-for="Email" />
+            <div class="form-group">
+                <label asp-for="Otp">Mã OTP</label>
+                <input asp-for="Otp" class="form-control" />
+                <span asp-validation-for="Otp" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Xác Nhận</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,39 @@
+﻿@model QuanLyChiTieu.Models.ChiTieu
+
+@{
+    ViewData["Title"] = "Chi tiết Khoản chi";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Chi tiết Khoản chi</h4>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Tên chi tiêu</dt>
+                    <dd class="col-sm-8">@Html.DisplayFor(model => model.TenChiTieu)</dd>
+
+                    <dt class="col-sm-4">Số tiền</dt>
+                    <dd class="col-sm-8">@Model.SoTien.ToString("N0") ₫</dd>
+
+                    <dt class="col-sm-4">Ngày chi</dt>
+                    <dd class="col-sm-8">@($"{Model.NgayChi:dd/MM/yyyy}")</dd>
+
+                    <dt class="col-sm-4">Danh mục</dt>
+                    <dd class="col-sm-8">@Html.DisplayFor(model => model.DanhMuc.TenDanhMuc)</dd>
+
+                    <dt class="col-sm-4">Ghi chú</dt>
+                    <dd class="col-sm-8">@(Model.GhiChu ?? "Không có ghi chú")</dd>
+                </dl>
+                <hr />
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-primary">Sửa</a>
+                    <a asp-action="Index" class="btn btn-secondary">Quay lại Danh sách</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

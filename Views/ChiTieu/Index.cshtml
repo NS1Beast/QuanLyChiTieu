@@ -1,0 +1,84 @@
+﻿@model QuanLyChiTieu.ViewModels.ChiTieuIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý Chi tiêu";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <h4 class="mb-0">Danh sách Chi tiêu</h4>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle-fill me-2"></i>Thêm Chi tiêu mới
+            </a>
+        </div>
+        <hr />
+        <form asp-action="Index" method="get">
+            <div class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Tìm theo tên</label>
+                    <input type="text" name="searchString" value="@Model.SearchString" class="form-control" placeholder="VD: Cà phê, Tiền điện...">
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Danh mục</label>
+                    <select name="danhMucFilter" asp-items="Model.DanhMucList" class="form-select">
+                        <option value="">Tất cả</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" name="tuNgay" value="@(Model.TuNgay.HasValue ? Model.TuNgay.Value.ToString("yyyy-MM-dd") : "")" class="form-control">
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" name="denNgay" value="@(Model.DenNgay.HasValue ? Model.DenNgay.Value.ToString("yyyy-MM-dd") : "")" class="form-control">
+                </div>
+                <div class="col-lg-2 col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-info w-100">Lọc</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Kết quả: @Model.ChiTieuList.Count mục</span>
+        <div class="fw-bold fs-5">Tổng cộng: <span class="text-danger">@Model.TongChiTieu.ToString("N0") ₫</span></div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Tên Chi tiêu</th>
+                    <th>Danh mục</th>
+                    <th>Ngày chi</th>
+                    <th>Ghi chú</th>
+                    <th class="text-end">Số tiền</th>
+                    <th class="text-center">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ChiTieuList)
+                {
+                        <tr>
+                            <td class="fw-bold">@Html.DisplayFor(modelItem => item.TenChiTieu)</td>
+                            <td>
+                                <span class="badge" style="background-color:@item.DanhMuc.MauSac; color: white; text-shadow: 1px 1px 2px #333;">
+                                @Html.DisplayFor(modelItem => item.DanhMuc.TenDanhMuc)
+                                </span>
+                            </td>
+                            <td>@($"{item.NgayChi:dd/MM/yyyy}")</td>
+                            <td>@Html.DisplayFor(modelItem => item.GhiChu)</td>
+                            <td class="text-end text-danger">@item.SoTien.ToString("N0") ₫</td>
+                            <td class="text-center">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash3"></i></a>
+                            </td>
+                        </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

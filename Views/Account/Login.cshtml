@@ -1,0 +1,72 @@
+﻿@model QuanLyChiTieu.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Đăng Nhập";
+    Layout = "~/Views/Shared/_LayoutLanding.cshtml"; // Sử dụng layout của trang giới thiệu
+}
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h2 class="text-center mb-4">Đăng Nhập 🔑</h2>
+        <p class="text-center text-muted mb-4">Chào mừng bạn quay trở lại!</p>
+
+        <form asp-action="Login" method="post">
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Email" class="form-label">Địa chỉ Email</label>
+                <input asp-for="Email" class="form-control" placeholder="Nhập email của bạn" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-4">
+                <label asp-for="Password" class="form-label">Mật khẩu</label>
+                <input asp-for="Password" class="form-control" placeholder="Nhập mật khẩu" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Đăng Nhập</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-4">
+            <p>Chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a></p>
+        </div>
+    </div>
+</div>
+
+@*
+    Thêm một chút CSS nội tuyến vào section Scripts để trang đăng nhập trông đẹp hơn.
+    Bạn cũng có thể chuyển đoạn CSS này vào file .css riêng nếu muốn.
+*@
+@section Scripts {
+        <style>
+            .auth-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 40px 15px; /* Thêm padding cho màn hình nhỏ */
+            }
+
+            .auth-card {
+                background-color: #ffffff;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+                width: 100%;
+                max-width: 450px; /* Giới hạn chiều rộng tối đa của form */
+            }
+
+            .form-control {
+                padding: 12px 15px;
+                height: auto;
+            }
+
+            .btn-primary {
+                padding: 12px;
+                font-weight: bold;
+            }
+        </style>
+}

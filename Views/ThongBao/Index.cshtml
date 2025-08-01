@@ -1,0 +1,39 @@
+﻿@model IEnumerable<QuanLyChiTieu.Models.ThongBao>
+@{
+    ViewData["Title"] = "Thông báo";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h4 class="card-title mb-0">Hộp thư thông báo</h4>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+                <ul class="list-group list-group-flush">
+                @foreach (var item in Model)
+                {
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold @(item.DaDoc == false ? "text-primary" : "")">
+                                @Html.DisplayFor(modelItem => item.NoiDung)
+                                    </div>
+                                            <small class="text-muted">@($"{item.NgayGui:HH:mm, dd/MM/yyyy}")</small>
+                                </div>
+                        @if (item.DaDoc == false)
+                        {
+                                        <span class="badge bg-primary rounded-pill" title="Chưa đọc">Mới</span>
+                        }
+                            </li>
+                }
+                </ul>
+        }
+        else
+        {
+                <div class="text-center p-4">
+                    <p>Bạn chưa có thông báo nào.</p>
+                </div>
+        }
+    </div>
+</div>

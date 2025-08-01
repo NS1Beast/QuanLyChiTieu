@@ -1,0 +1,64 @@
+﻿@model QuanLyChiTieu.Models.ChiTieu
+
+@{
+    ViewData["Title"] = "Chỉnh sửa Chi tiêu";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Chỉnh sửa Khoản chi</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="mb-3">
+                        <label asp-for="TenChiTieu" class="form-label">Tên chi tiêu</label>
+                        <input asp-for="TenChiTieu" class="form-control" />
+                        <span asp-validation-for="TenChiTieu" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="SoTien" class="form-label">Số tiền</label>
+                            <input asp-for="SoTien" class="form-control" type="number" />
+                            <span asp-validation-for="SoTien" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                             <label asp-for="NgayChi" class="form-label">Ngày chi</label>
+                             <input asp-for="NgayChi" class="form-control" type="date" />
+                             <span asp-validation-for="NgayChi" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DanhMucId" class="form-label">Danh mục</label>
+                        <select asp-for="DanhMucId" class="form-select" asp-items="ViewBag.DanhMucId"></select>
+                        <span asp-validation-for="DanhMucId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="GhiChu" class="form-label">Ghi chú (Tùy chọn)</label>
+                        <textarea asp-for="GhiChu" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="GhiChu" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                         <button type="submit" class="btn btn-primary">Cập nhật</button>
+                         <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

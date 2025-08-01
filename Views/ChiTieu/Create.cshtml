@@ -1,0 +1,98 @@
+﻿@model QuanLyChiTieu.Models.ChiTieu
+
+@{
+    ViewData["Title"] = "Thêm Chi tiêu mới";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Tạo khoản chi mới</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="TenChiTieu" class="form-label">Tên chi tiêu</label>
+                        <input asp-for="TenChiTieu" class="form-control" placeholder="VD: Ăn trưa, Đổ xăng..." />
+                        <span asp-validation-for="TenChiTieu" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="SoTien" class="form-label">Số tiền</label>
+                            <input asp-for="SoTien" class="form-control" type="number" step="1000" />
+                            <span asp-validation-for="SoTien" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                             <label asp-for="NgayChi" class="form-label">Ngày chi</label>
+                             <input asp-for="NgayChi" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")"/>
+                             <span asp-validation-for="NgayChi" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DanhMucId" class="form-label">Danh mục</label>
+                        <select asp-for="DanhMucId" class="form-select" asp-items="ViewBag.DanhMucId"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="GhiChu" class="form-label">Ghi chú (Tùy chọn)</label>
+                        <textarea asp-for="GhiChu" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="GhiChu" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                         <button type="submit" class="btn btn-primary">Lưu lại</button>
+                         <a asp-action="Index" class="btn btn-secondary">Quay lại Danh sách</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const tenChiTieuInput = document.getElementById('TenChiTieu');
+                const danhMucSelect = document.getElementById('DanhMucId');
+                let timeout = null;
+
+                tenChiTieuInput.addEventListener('keyup', function() {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(function() {
+                        const query = tenChiTieuInput.value;
+                        if (query.length > 2) {
+                            // Lấy token từ input ẩn mà @Html.AntiForgeryToken() đã tạo ra
+                            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                            fetch('@Url.Action("SuggestCategory", "ChiTieu")', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'RequestVerificationToken': token
+                                },
+                                body: 'query=' + encodeURIComponent(query)
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    danhMucSelect.value = data.categoryId;
+                                }
+                            })
+                            .catch(error => console.error('Error:', error));
+                        }
+                    }, 500);
+                });
+            });
+        </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

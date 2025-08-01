@@ -1,0 +1,43 @@
+﻿@model QuanLyChiTieu.Models.ChiTieu
+
+@{
+    ViewData["Title"] = "Xác nhận Xóa";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="card-title mb-0">Xác nhận Xóa</h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Bạn có chắc chắn muốn xóa khoản chi này không?</h5>
+                <p>Hành động này không thể được hoàn tác.</p>
+                <hr />
+
+                <dl class="row">
+                    <dt class="col-sm-3">Tên chi tiêu</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.TenChiTieu)</dd>
+
+                    <dt class="col-sm-3">Số tiền</dt>
+                    <dd class="col-sm-9">@Model.SoTien.ToString("N0") ₫</dd>
+
+                    <dt class="col-sm-3">Ngày chi</dt>
+                    <dd class="col-sm-9">@($"{Model.NgayChi:dd/MM/yyyy}")</dd>
+
+                    <dt class="col-sm-3">Danh mục</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.DanhMuc.TenDanhMuc)</dd>
+                </dl>
+
+                <form asp-action="Delete">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-danger">Xóa</button>
+                        <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

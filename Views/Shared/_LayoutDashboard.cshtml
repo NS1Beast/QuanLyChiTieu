@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Bảng điều khiển</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a class="sidebar-brand" asp-controller="Dashboard" asp-action="Index">
+                <i class="bi bi-wallet2"></i>
+                <span>Quản Lý Chi Tiêu</span>
+            </a>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li class="nav-heading">Chức năng chính</li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Bảng điều khiển</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="ChiTieu" asp-action="Index">
+                    <i class="bi bi-card-list"></i>
+                    <span>Quản lý chi tiêu</span>
+                </a>
+            </li>
+             <li class="nav-item">
+                <a class="nav-link" asp-controller="DanhMuc" asp-action="Index">
+                    <i class="bi bi-tags-fill"></i>
+                    <span>Danh mục chi tiêu</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="ThongKe" asp-action="Index">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Thống kê & Báo cáo</span>
+                </a>
+            </li>
+
+            <li class="nav-heading">Công cụ & Cài đặt</li>
+             <li class="nav-item">
+                <a class="nav-link" asp-controller="GioiHanChiTieu" asp-action="Index">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>Đặt hạn mức</span>
+                </a>
+            </li>
+             <li class="nav-item">
+                <a class="nav-link" asp-controller="ThongBao" asp-action="Index">
+                    <i class="bi bi-bell-fill"></i>
+                    <span>Thông báo</span>
+                </a>
+            </li>
+
+            <li class="nav-heading">Tài khoản</li>
+             <li class="nav-item">
+                <a class="nav-link" asp-controller="Profile" asp-action="Index">
+                    <i class="bi bi-person-fill"></i>
+                    <span>Hồ sơ của tôi</span>
+                </a>
+            </li>
+             <li class="nav-item">
+                <a class="nav-link" asp-controller="Settings" asp-action="Index">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Cài đặt nhắc nhở</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <div class="main-content">
+        <nav class="top-navbar">
+            <div class="navbar-left">
+                <h5 class="page-title">@ViewData["Title"]</h5>
+            </div>
+            <div class="navbar-right">
+                <button id="theme-toggler" class="btn-icon" title="Đổi giao diện Sáng/Tối">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </button>
+
+                @if (User.Identity.IsAuthenticated)
+                {
+                        <span class="user-info">Chào, @User.Identity.Name</span>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="btn-icon logout-btn" title="Đăng xuất">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
+                        </form>
+                }
+            </div>
+        </nav>
+
+        <main class="content-wrapper">
+            @RenderBody()
+        </main>
+
+        <footer class="footer">
+            <div class="container-fluid">
+                <span>&copy; @DateTime.Now.Year - Quản Lý Chi Tiêu Cá Nhân</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
