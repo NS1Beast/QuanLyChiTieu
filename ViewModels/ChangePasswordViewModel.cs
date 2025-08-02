@@ -19,5 +19,10 @@ namespace QuanLyChiTieu.ViewModels
         [Display(Name = "Xác nhận mật khẩu mới")]
         [Compare("NewPassword", ErrorMessage = "Mật khẩu mới và mật khẩu xác nhận không khớp.")]
         public string ConfirmPassword { get; set; }
+
+        // THÊM TRƯỜNG NÀY VÀO
+        [Required(ErrorMessage = "Vui lòng nhập mã OTP.")]
+        [Display(Name = "Mã OTP")]
+        public string Otp { get; set; }
     }
 }

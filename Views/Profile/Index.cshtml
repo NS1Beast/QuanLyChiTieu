@@ -2,22 +2,27 @@
 @{
     ViewData["Title"] = "Hồ sơ của tôi";
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
-    // Khởi tạo một model rỗng cho form đổi mật khẩu
     var changePasswordModel = new QuanLyChiTieu.ViewModels.ChangePasswordViewModel();
 }
 
 @if (ViewBag.SuccessMessage != null)
 {
-        <div class="alert alert-success">@ViewBag.SuccessMessage</div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @ViewBag.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
 }
-@if (TempData["PasswordError"] != null)
+@if (ViewBag.ErrorMessage != null)
 {
-        <div class="alert alert-danger">@TempData["PasswordError"]</div>
+         <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
 }
 
 <div class="row g-4">
     <div class="col-lg-6">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="card-title mb-0">Thông tin cá nhân</h5>
             </div>
@@ -44,7 +49,7 @@
     </div>
 
     <div class="col-lg-6">
-        <div class="card">
+        <div class="card h-100">
              <div class="card-header">
                 <h5 class="card-title mb-0">Bảo mật & Mật khẩu</h5>
             </div>
@@ -62,36 +67,83 @@
 <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form asp-action="ChangePassword" method="post">
+            <form asp-action="ChangePassword" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn đổi mật khẩu không?');">
                 @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="changePasswordModalLabel">Đổi Mật khẩu</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
                     <div class="mb-3">
                         <label asp-for="@changePasswordModel.OldPassword" class="form-label"></label>
-                        <input asp-for="@changePasswordModel.OldPassword" class="form-control" />
-                        <span asp-validation-for="@changePasswordModel.OldPassword" class="text-danger"></span>
+                        <input asp-for="@changePasswordModel.OldPassword" class="form-control" required />
                     </div>
                      <div class="mb-3">
                         <label asp-for="@changePasswordModel.NewPassword" class="form-label"></label>
-                        <input asp-for="@changePasswordModel.NewPassword" class="form-control" />
-                        <span asp-validation-for="@changePasswordModel.NewPassword" class="text-danger"></span>
+                        <input asp-for="@changePasswordModel.NewPassword" class="form-control" required />
                     </div>
                      <div class="mb-3">
                         <label asp-for="@changePasswordModel.ConfirmPassword" class="form-label"></label>
-                        <input asp-for="@changePasswordModel.ConfirmPassword" class="form-control" />
-                        <span asp-validation-for="@changePasswordModel.ConfirmPassword" class="text-danger"></span>
+                        <input asp-for="@changePasswordModel.ConfirmPassword" class="form-control" required />
+                    </div>
+                    <hr/>
+                    <div class="mb-3">
+                        <label asp-for="@changePasswordModel.Otp" class="form-label"></label>
+                        <div class="input-group">
+                            <input asp-for="@changePasswordModel.Otp" class="form-control" placeholder="Nhập mã OTP gồm 6 số" required />
+                            <button class="btn btn-outline-secondary" type="button" id="sendOtpButton">Gửi mã</button>
+                        </div>
+                        <small id="otpMessage" class="form-text text-muted">Nhấn "Gửi mã" để nhận OTP qua email.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Gửi mã OTP</button>
+                    <button type="submit" class="btn btn-primary">Xác nhận</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const sendOtpButton = document.getElementById('sendOtpButton');
+                const otpMessage = document.getElementById('otpMessage');
+                const tokenInput = document.querySelector('#changePasswordModal input[name="__RequestVerificationToken"]');
+
+                if (sendOtpButton) {
+                    sendOtpButton.addEventListener('click', function() {
+                        sendOtpButton.disabled = true;
+                        otpMessage.textContent = 'Đang gửi...';
+                        otpMessage.className = 'form-text text-muted';
+
+                        fetch('@Url.Action("SendPasswordChangeOtp", "Profile")', {
+                            method: 'POST',
+                            headers: {
+                                // Lấy token từ input ẩn trong form
+                                'RequestVerificationToken': tokenInput.value 
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                otpMessage.textContent = data.message;
+                                otpMessage.className = 'form-text text-success';
+                            } else {
+                                otpMessage.textContent = 'Lỗi: ' + (data.message || 'Không thể gửi OTP.');
+                                otpMessage.className = 'form-text text-danger';
+                                sendOtpButton.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                             console.error('Error:', error);
+                             otpMessage.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
+                             otpMessage.className = 'form-text text-danger';
+                             sendOtpButton.disabled = false;
+                        });
+                    });
+                }
+            });
+        </script>
+}

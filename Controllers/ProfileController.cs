@@ -35,21 +35,14 @@ namespace QuanLyChiTieu.Controllers
         // GET: /Profile
         public async Task<IActionResult> Index(string? message)
         {
-            if (!string.IsNullOrEmpty(message))
-            {
-                ViewBag.SuccessMessage = message;
-            }
+            if (!string.IsNullOrEmpty(message)) ViewBag.SuccessMessage = message;
+            if (TempData["PasswordError"] != null) ViewBag.ErrorMessage = TempData["PasswordError"];
 
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var user = await _context.NguoiDungs.FindAsync(userId);
-
             if (user == null) return NotFound();
 
-            var viewModel = new ProfileViewModel
-            {
-                Email = user.Email,
-                HoTen = user.HoTen
-            };
+            var viewModel = new ProfileViewModel { Email = user.Email, HoTen = user.HoTen };
             return View(viewModel);
         }
 
@@ -62,7 +55,6 @@ namespace QuanLyChiTieu.Controllers
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.NguoiDungs.FindAsync(userId);
-
                 if (user == null) return NotFound();
 
                 user.HoTen = model.HoTen;
@@ -74,87 +66,63 @@ namespace QuanLyChiTieu.Controllers
             return View("Index", model);
         }
 
-        // POST: /Profile/ChangePassword
+        // ACTION MỚI: Chỉ gửi mã OTP
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendPasswordChangeOtp()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var user = await _context.NguoiDungs.FindAsync(userId);
+            if (user == null) return Json(new { success = false, message = "Không tìm thấy người dùng." });
+
+            var otpCode = new Random().Next(100000, 999999).ToString();
+            var otp = new Otp { Email = user.Email, MaOtp = otpCode, ThoiGianTao = DateTime.Now };
+            _context.Otps.Add(otp);
+            await _context.SaveChangesAsync();
+
+            var subject = "Mã OTP xác nhận đổi mật khẩu";
+            var message = $"Mã OTP để xác nhận đổi mật khẩu của bạn là: <strong>{otpCode}</strong>";
+            await _emailService.SendEmailAsync(user.Email, subject, message);
+
+            return Json(new { success = true, message = "Mã OTP đã được gửi đến email của bạn." });
+        }
+
+        // ACTION ĐƯỢC CẬP NHẬT: Xử lý toàn bộ form đổi mật khẩu
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
-            // CẬP NHẬT: Thêm kiểm tra ModelState
             if (!ModelState.IsValid)
             {
-                TempData["PasswordError"] = "Vui lòng kiểm tra lại các thông tin đã nhập.";
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                TempData["PasswordError"] = "Vui lòng kiểm tra lại thông tin: " + string.Join("; ", errors);
                 return RedirectToAction("Index");
             }
 
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var user = await _context.NguoiDungs.FindAsync(userId);
-
             if (user == null) return NotFound();
 
+            // 1. Kiểm tra mật khẩu cũ
             if (user.MatKhau != HashPassword(model.OldPassword))
             {
                 TempData["PasswordError"] = "Mật khẩu cũ không chính xác.";
                 return RedirectToAction("Index");
             }
 
-            var otpCode = new Random().Next(100000, 999999).ToString();
-            var otp = new Otp
-            {
-                Email = user.Email,
-                MaOtp = otpCode,
-                ThoiGianTao = DateTime.Now
-            };
-            _context.Otps.Add(otp);
-            await _context.SaveChangesAsync();
-
-            TempData["NewHashedPassword"] = HashPassword(model.NewPassword);
-
-            var subject = "Mã OTP xác nhận đổi mật khẩu";
-            var message = $"Mã OTP để xác nhận đổi mật khẩu của bạn là: <strong>{otpCode}</strong>";
-            await _emailService.SendEmailAsync(user.Email, subject, message);
-
-            return RedirectToAction("VerifyPasswordChange");
-        }
-
-        // GET: /Profile/VerifyPasswordChange
-        public IActionResult VerifyPasswordChange()
-        {
-            // Giữ lại TempData để nếu người dùng reload trang không bị mất
-            TempData.Keep("NewHashedPassword");
-            return View();
-        }
-
-        // POST: /Profile/VerifyPasswordChange
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifyPasswordChange(string otp)
-        {
-            var email = User.Identity.Name;
-            var newHashedPassword = TempData["NewHashedPassword"] as string;
-
-            if (string.IsNullOrEmpty(newHashedPassword))
-            {
-                ModelState.AddModelError(string.Empty, "Phiên làm việc đã hết hạn. Vui lòng thử lại.");
-                return View();
-            }
-
+            // 2. Kiểm tra OTP
             var otpRecord = await _context.Otps
-                .FirstOrDefaultAsync(o => o.Email == email && o.MaOtp == otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
+                .FirstOrDefaultAsync(o => o.Email == user.Email && o.MaOtp == model.Otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
 
             if (otpRecord == null)
             {
-                ModelState.AddModelError(string.Empty, "Mã OTP không hợp lệ hoặc đã hết hạn.");
-                TempData.Keep("NewHashedPassword"); // Giữ lại pass để user thử lại
-                return View();
+                TempData["PasswordError"] = "Mã OTP không hợp lệ hoặc đã hết hạn.";
+                return RedirectToAction("Index");
             }
 
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var user = await _context.NguoiDungs.FindAsync(userId);
-
-            if (user == null) return NotFound();
-
-            user.MatKhau = newHashedPassword;
-            otpRecord.TrangThai = true;
+            // 3. Mọi thứ hợp lệ, tiến hành đổi mật khẩu
+            user.MatKhau = HashPassword(model.NewPassword);
+            otpRecord.TrangThai = true; // Đánh dấu OTP đã sử dụng
 
             _context.Update(user);
             await _context.SaveChangesAsync();

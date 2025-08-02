@@ -1,20 +1,131 @@
-﻿@{
+﻿@model QuanLyChiTieu.ViewModels.ThongKeViewModel
+
+@{
     ViewData["Title"] = "Thống kê & Báo cáo";
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
 }
 
-<div class="card">
-    <div class="card-header">
-        <h4 class="card-title mb-0">Phân tích chuyên sâu</h4>
-    </div>
-    <div class="card-body text-center">
-        <i class="bi bi-bar-chart-line-fill" style="font-size: 5rem; color: #ddd;"></i>
-        <h5 class="mt-3">Tính năng đang được phát triển!</h5>
-        <p class="text-muted">
-            Đây sẽ là nơi bạn có thể xem các báo cáo chi tiết về:<br />
-            - So sánh chi tiêu giữa các tháng/quý/năm.<br />
-            - Phân tích xu hướng chi tiêu cho từng danh mục.<br />
-            - Và nhiều báo cáo hữu ích khác...
-        </p>
+<div class="card mb-4">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label asp-for="SelectedYear" class="form-label">Chọn năm để xem báo cáo</label>
+                <select asp-for="SelectedYear" asp-items="Model.YearList" class="form-select"></select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary">Xem báo cáo</button>
+            </div>
+        </form>
     </div>
 </div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Xu hướng chi tiêu các tháng trong năm @Model.SelectedYear</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyChart" style="min-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Phân tích theo Danh mục - @Model.SelectedYear</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="fw-bold">Tổng chi tiêu năm:</span>
+                    <span class="fw-bold text-danger">@Model.TotalYearlySpending.ToString("N0") ₫</span>
+                </div>
+                <hr />
+                @if (Model.CategoryBreakdown.Any())
+                {
+                    foreach (var item in Model.CategoryBreakdown)
+                    {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>
+                                            <i class="bi bi-square-fill me-2" style="color:@item.MauSac"></i>
+                                    @item.TenDanhMuc
+                                        </span>
+                                        <strong>@item.TongTien.ToString("N0") ₫</strong>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar" role="progressbar" style="width: @item.TyTrong.ToString("F0")%; background-color:@item.MauSac" aria-valuenow="@item.TyTrong.ToString("F0")"></div>
+                                    </div>
+                                </div>
+                    }
+                }
+                else
+                {
+                         <p class="text-center text-muted mt-3">Không có dữ liệu chi tiêu cho năm @Model.SelectedYear.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const monthlyData = JSON.parse('@Html.Raw(Model.JsonMonthlySpending)');
+
+                const lineCtx = document.getElementById('monthlyChart').getContext('2d');
+                new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                        datasets: [{
+                            label: 'Tổng chi (VNĐ)',
+                            data: monthlyData,
+                            borderColor: '#696cff',
+                            backgroundColor: 'rgba(105, 108, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4, // Làm cho đường cong mượt hơn
+                            pointBackgroundColor: '#696cff',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+}
