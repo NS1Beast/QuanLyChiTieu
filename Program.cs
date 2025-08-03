@@ -1,69 +1,98 @@
-﻿// Thêm các using cần thiết ở đầu file
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using QuanLyChiTieu.Data;
-using QuanLyChiTieu.Services; // Thay QuanLyChiTieu bằng tên dự án của bạn
+using QuanLyChiTieu.Services;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. CẤU HÌNH CÁC DỊCH VỤ (SERVICE REGISTRATION) ---
+// 1. Cấu hình Data Protection để lưu khóa mã hóa
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(@"C:\temp-keys\"))
+    .SetApplicationName("QuanLyChiTieuApp");
 
-// Lấy chuỗi kết nối từ appsettings.json
+// 2. Đăng ký các dịch vụ MVC và Localization
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddControllersWithViews()
+    .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
+    .AddDataAnnotationsLocalization();
+
+// 3. Đăng ký DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-// Đăng ký DbContext với chuỗi kết nối
 builder.Services.AddDbContext<DataBase_DoAnContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Đăng ký các dịch vụ MVC
-builder.Services.AddControllersWithViews();
-//Đăng ký dịch vụ nhắc nhở email
-builder.Services.AddHostedService<EmailReminderService>();
-// Đăng ký dịch vụ tùy chỉnh (ví dụ: EmailService)
-builder.Services.AddTransient<IEmailService, SmtpEmailService>();
-
-// Cấu hình dịch vụ Authentication (Xác thực) bằng Cookie
+// 4. Cấu hình Authentication
 builder.Services.AddAuthentication("MyCookieAuth").AddCookie("MyCookieAuth", options =>
 {
     options.Cookie.Name = "MyCookieAuth";
-    options.LoginPath = "/Account/Login"; // Trang sẽ chuyển đến nếu chưa đăng nhập
-    options.AccessDeniedPath = "/Account/AccessDenied"; // Trang hiển thị khi không có quyền
-    options.ExpireTimeSpan = TimeSpan.FromDays(7); // Thời gian cookie hết hạn
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
 });
 
-// --- 2. XÂY DỰNG ỨNG DỤNG ---
-// Tất cả các dịch vụ phải được đăng ký TRƯỚC dòng này
+// 5. Đọc MailSettings từ appsettings.json
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+
+// 6. Thêm dịch vụ Session
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// 7. Cấu hình các ngôn ngữ được hỗ trợ
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { new CultureInfo("vi-VN"), new CultureInfo("en-US") };
+    options.DefaultRequestCulture = new RequestCulture("vi-VN");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+    options.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider());
+});
+
+// 8. Đăng ký dịch vụ chạy nền
+builder.Services.AddHostedService<EmailReminderService>();
+
+// 9. CẬP NHẬT: Thêm dịch vụ SignalR
+builder.Services.AddSignalR();
+
+// Build ứng dụng
 var app = builder.Build();
-
-
-// --- 3. CẤU HÌNH HTTP REQUEST PIPELINE (MIDDLEWARE) ---
-// Thứ tự của các middleware rất quan trọng
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// Bật tính năng định tuyến (routing)
+// Sử dụng Middleware Localization
+var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+app.UseRequestLocalization(locOptions.Value);
+
 app.UseRouting();
 
-// Bật tính năng xác thực (Authentication). Phải đứng trước Authorization.
-app.UseAuthentication();
+app.UseSession();
 
-// Bật tính năng phân quyền (Authorization)
+app.UseAuthentication();
 app.UseAuthorization();
 
+// CẬP NHẬT: Map endpoint cho SignalR Hub
+app.MapHub<QuanLyChiTieu.Services.NotificationHub>("/notificationHub");
 
-// Định nghĩa các route cho controller
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-
-// --- 4. CHẠY ỨNG DỤNG ---
 app.Run();

@@ -6,70 +6,42 @@ using QuanLyChiTieu.Services;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims; // <-- THÊM using này
-using Microsoft.AspNetCore.Authentication; // <-- THÊM using này
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using System.Linq;
 
 namespace QuanLyChiTieu.Controllers
 {
+    [AllowAnonymous]
     public class AccountController : Controller
     {
         private readonly DataBase_DoAnContext _context;
         private readonly IEmailService _emailService;
 
-        // Tiêm DbContext và IEmailService vào constructor
         public AccountController(DataBase_DoAnContext context, IEmailService emailService)
         {
             _context = context;
             _emailService = emailService;
         }
 
-        // --- HÀM HASH MẬT KHẨU (VÍ DỤ ĐƠN GIẢN) ---
-        // Trong thực tế nên dùng thư viện như BCrypt.Net để an toàn hơn
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
-            }
-        }
+        private string HashPassword(string password) { using (var sha256 = SHA256.Create()) { var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password)); return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower(); } }
 
-        // --- HÀM HỖ TRỢ ĐĂNG NHẬP ---
-        // Tách riêng hàm này để có thể tái sử dụng cho cả Login và sau khi Register
-        private async Task SignInUserAsync(NguoiDung user)
+        // CẬP NHẬT 1: Sửa lại hàm SignInUserAsync để nhận giá trị "isPersistent"
+        private async Task SignInUserAsync(NguoiDung user, bool isPersistent)
         {
-            // Tạo các "claims" - thông tin về người dùng đã đăng nhập
             var claims = new List<Claim>
             {
-                // Claim chứa Email, có thể dùng để hiển thị lời chào
-                new Claim(ClaimTypes.Name, user.Email),
-                // Claim chứa ID của người dùng, rất quan trọng để truy vấn dữ liệu của riêng họ
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                // Thêm các claim khác nếu cần, ví dụ như Họ Tên
-                new Claim("FullName", user.HoTen ?? "")
+                new Claim(ClaimTypes.Name, !string.IsNullOrWhiteSpace(user.HoTen) ? user.HoTen : user.Email),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
-
-            // Tạo danh tính người dùng
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
-
-            // Tạo cookie xác thực
-            var authProperties = new AuthenticationProperties
-            {
-                // IsPersistent = true sẽ giúp cookie tồn tại sau khi đóng trình duyệt
-                IsPersistent = true
-            };
-
-            // Thực hiện đăng nhập, hệ thống sẽ tạo và gửi cookie về trình duyệt
+            var authProperties = new AuthenticationProperties { IsPersistent = isPersistent };
             await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
         }
 
-
-        // --- ĐĂNG KÝ ---
-        [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
+        [HttpGet] public IActionResult Register() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -77,118 +49,72 @@ namespace QuanLyChiTieu.Controllers
         {
             if (ModelState.IsValid)
             {
-                // 1. Kiểm tra xem email đã tồn tại chưa
-                var existingUser = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == model.Email);
-                if (existingUser != null)
+                if (await _context.NguoiDungs.AnyAsync(u => u.Email == model.Email))
                 {
                     ModelState.AddModelError(string.Empty, "Email này đã được đăng ký.");
                     return View(model);
                 }
-
-                // 2. Tạo mã OTP
                 var otpCode = new Random().Next(100000, 999999).ToString();
-                var otp = new Otp
-                {
-                    Email = model.Email,
-                    MaOtp = otpCode,
-                    ThoiGianTao = DateTime.Now,
-                    TrangThai = false // False = chưa được xác thực
-                };
-
-                // 3. Lưu OTP vào database
+                var otp = new Otp { Email = model.Email, MaOtp = otpCode, ThoiGianTao = DateTime.Now };
                 _context.Otps.Add(otp);
                 await _context.SaveChangesAsync();
-
-                // 4. Lưu thông tin đăng ký tạm thời vào TempData
-                // TempData chỉ tồn tại trong một yêu cầu chuyển hướng.
                 TempData["PendingUserEmail"] = model.Email;
                 TempData["PendingUserPassword"] = HashPassword(model.Password);
-
-                // 5. Gửi email chứa mã OTP
                 var subject = "Mã OTP xác thực tài khoản";
                 var message = $"<p>Chào bạn,</p><p>Mã OTP để xác thực tài khoản của bạn là: <strong>{otpCode}</strong></p><p>Mã này sẽ hết hạn sau 5 phút.</p>";
                 await _emailService.SendEmailAsync(model.Email, subject, message);
-
-                // 6. Chuyển hướng đến trang nhập OTP
                 return RedirectToAction("VerifyOtp", new { email = model.Email });
             }
             return View(model);
         }
 
-        // --- XÁC THỰC OTP ---
         [HttpGet]
         public IActionResult VerifyOtp(string email)
         {
-            if (string.IsNullOrEmpty(email))
-            {
-                return RedirectToAction("Register");
-            }
-            var model = new VerifyOtpViewModel { Email = email };
-            return View(model);
+            if (string.IsNullOrEmpty(email)) return RedirectToAction("Register");
+            return View(new VerifyOtpViewModel { Email = email });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyOtp(VerifyOtpViewModel model)
         {
-            // Giữ lại dữ liệu TempData để nếu người dùng nhập sai OTP, họ có thể thử lại.
             TempData.Keep("PendingUserEmail");
             TempData.Keep("PendingUserPassword");
-
             if (ModelState.IsValid)
             {
-                // Tìm mã OTP hợp lệ trong database (chưa dùng, chưa hết hạn)
-                var otpRecord = await _context.Otps
-                  .FirstOrDefaultAsync(o => o.Email == model.Email
-                       && o.MaOtp == model.Otp
-                       && o.TrangThai == false
-                       && o.ThoiGianTao.HasValue // 1. Kiểm tra xem ThoiGianTao có giá trị không
-                       && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now); // 2. Lấy giá trị rồi mới cộng thêm phút
-
+                var otpRecord = await _context.Otps.FirstOrDefaultAsync(o => o.Email == model.Email && o.MaOtp == model.Otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
                 if (otpRecord == null)
                 {
                     ModelState.AddModelError(string.Empty, "Mã OTP không hợp lệ hoặc đã hết hạn.");
                     return View(model);
                 }
-
-                // Lấy thông tin người dùng đang chờ từ TempData
                 var email = TempData["PendingUserEmail"] as string;
                 var hashedPassword = TempData["PendingUserPassword"] as string;
-
                 if (email != model.Email || string.IsNullOrEmpty(hashedPassword))
                 {
                     ModelState.AddModelError(string.Empty, "Phiên đăng ký đã hết hạn, vui lòng thử lại.");
                     return View(model);
                 }
-
-                // Tạo người dùng mới
-                var newUser = new NguoiDung
-                {
-                    Email = email,
-                    MatKhau = hashedPassword,
-                    // Các trường khác sẽ có giá trị mặc định từ database
-                };
-
+                var newUser = new NguoiDung { Email = email, MatKhau = hashedPassword, NgayDangKy = DateTime.Now };
                 _context.NguoiDungs.Add(newUser);
-
-                // Đánh dấu OTP đã được sử dụng
                 otpRecord.TrangThai = true;
-
                 await _context.SaveChangesAsync();
 
-                // *** TỰ ĐỘNG ĐĂNG NHẬP SAU KHI ĐĂNG KÝ THÀNH CÔNG ***
-                await SignInUserAsync(newUser);
-
-                // Chuyển đến trang chính
+                // CẬP NHẬT 2: Tự động đăng nhập sau khi đăng ký sẽ không ghi nhớ (phiên làm việc tạm thời)
+                await SignInUserAsync(newUser, isPersistent: false);
                 return RedirectToAction("Index", "Dashboard");
             }
             return View(model);
         }
 
-        // --- ĐĂNG NHẬP ---
         [HttpGet]
         public IActionResult Login()
         {
+            if (TempData["SuccessMessage"] != null)
+            {
+                ViewBag.SuccessMessage = TempData["SuccessMessage"];
+            }
             return View();
         }
 
@@ -198,44 +124,91 @@ namespace QuanLyChiTieu.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Tìm người dùng bằng email
-                var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == model.Email);
-
-                // Nếu tìm thấy người dùng, kiểm tra mật khẩu
+                var hashedPassword = HashPassword(model.Password);
+                var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == model.Email && u.MatKhau == hashedPassword);
                 if (user != null)
                 {
-                    // Hash mật khẩu người dùng nhập vào và so sánh với hash trong database
-                    if (user.MatKhau == HashPassword(model.Password))
-                    {
-                        // Nếu mật khẩu khớp, thực hiện đăng nhập
-                        await SignInUserAsync(user);
-                        return RedirectToAction("Index", "Dashboard"); // Chuyển đến trang dashboard
-                    }
+                    // CẬP NHẬT 3: Truyền giá trị của checkbox "RememberMe" vào hàm đăng nhập
+                    await SignInUserAsync(user, model.RememberMe);
+                    return RedirectToAction("Index", "Dashboard");
                 }
-
-                // Nếu không tìm thấy user hoặc mật khẩu không đúng
                 ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
             }
             return View(model);
         }
 
-
-        // --- ĐĂNG XUẤT ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            // Xóa cookie xác thực
             await HttpContext.SignOutAsync("MyCookieAuth");
-            // Chuyển về trang giới thiệu
             return RedirectToAction("Index", "Home");
         }
 
-        // --- TRANG TRUY CẬP BỊ TỪ CHỐI ---
-        [HttpGet]
-        public IActionResult AccessDenied()
+        [HttpGet] public IActionResult ForgotPassword() => View();
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ForgotPassword(ForgotPasswordViewModel model)
         {
-            return View();
+            if (ModelState.IsValid)
+            {
+                return RedirectToAction("ResetPassword", new { email = model.Email });
+            }
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendResetOtp(string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập email." });
+            }
+            var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                return Json(new { success = true, message = "Nếu email tồn tại, mã OTP đã được gửi." });
+            }
+            var otpCode = new Random().Next(100000, 999999).ToString();
+            var otp = new Otp { Email = user.Email, MaOtp = otpCode, ThoiGianTao = DateTime.Now };
+            _context.Otps.Add(otp);
+            await _context.SaveChangesAsync();
+            var subject = "Yêu cầu đặt lại mật khẩu";
+            var message = $"Mã OTP để đặt lại mật khẩu của bạn là: <strong>{otpCode}</strong>";
+            await _emailService.SendEmailAsync(user.Email, subject, message);
+            return Json(new { success = true, message = "Mã OTP đã được gửi thành công." });
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string email)
+        {
+            if (string.IsNullOrEmpty(email)) return RedirectToAction("ForgotPassword");
+            return View(new ResetPasswordViewModel { Email = email });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == model.Email);
+                var otpRecord = await _context.Otps.FirstOrDefaultAsync(o => o.Email == model.Email && o.MaOtp == model.Otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
+                if (user == null || otpRecord == null)
+                {
+                    ModelState.AddModelError(string.Empty, "Mã OTP không hợp lệ hoặc đã hết hạn.");
+                    return View(model);
+                }
+                user.MatKhau = HashPassword(model.NewPassword);
+                otpRecord.TrangThai = true;
+                _context.Update(user);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Đặt lại mật khẩu thành công! Bây giờ bạn có thể đăng nhập.";
+                return RedirectToAction("Login");
+            }
+            return View(model);
         }
     }
 }

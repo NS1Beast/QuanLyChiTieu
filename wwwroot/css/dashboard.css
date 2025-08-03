@@ -242,3 +242,88 @@ body {
         display: none; /* Ẩn tên user cho gọn */
     }
 }
+/* Thêm vào cuối file dashboard.css */
+.bg-danger-soft {
+    background-color: rgba(255, 77, 79, 0.1);
+}
+/* Thêm vào cuối file */
+.notification-bell {
+    position: relative;
+}
+
+.notification-count {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(40%, -40%);
+    font-size: 0.65rem;
+    padding: 0.2em 0.5em;
+}
+/* Thêm vào cuối file */
+.notification-dropdown {
+    width: 350px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+}
+
+    .notification-dropdown .dropdown-header,
+    .notification-dropdown .dropdown-footer a {
+        font-size: 0.9rem;
+        padding: 10px 15px;
+    }
+
+.notification-item .dropdown-item {
+    padding: 10px 15px;
+    white-space: normal;
+}
+
+.notification-item.unread {
+    background-color: var(--primary-soft);
+}
+
+.notification-item p {
+    font-size: 0.9rem;
+    color: var(--heading-color);
+}
+
+.notification-item small {
+    font-size: 0.75rem;
+}
+/* ======================================================
+   ----- SỬA LỖI MÀU CHỮ TRONG CHẾ ĐỘ TỐI -----
+   ====================================================== */
+
+/* Đảm bảo các tiêu đề trong card sử dụng đúng màu của theme */
+.card .card-title,
+.card .card-header h1,
+.card .card-header h2,
+.card .card-header h3,
+.card .card-header h4,
+.card .card-header h5,
+.card .card-header h6 {
+    color: var(--heading-color);
+}
+
+/* Đảm bảo chữ trong card-body và bảng sử dụng đúng màu của theme */
+.card .card-body,
+.card .card-body p,
+.table th,
+.table td,
+.list-group-item {
+    color: var(--text-color);
+}
+
+/* Đảm bảo các danh sách trong card có nền trong suốt để lấy màu của card */
+.list-group-flush {
+    background-color: transparent;
+}
+
+.list-group-item {
+    background-color: transparent;
+    border-color: var(--border-color);
+}
+
+/* Đảm bảo các liên kết trong card sử dụng đúng màu của theme */
+.card-body a {
+    color: var(--primary-color);
+}

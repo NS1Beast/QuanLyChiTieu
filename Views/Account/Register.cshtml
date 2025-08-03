@@ -4,39 +4,54 @@
     Layout = "~/Views/Shared/_LayoutLanding.cshtml";
 }
 
-<h2 style ="
-         display: flex;
-         justify-content: center;
-"> Đăng Ký Tài Khoản Mới</h2>
+<div class="login-page-wrapper">
+    <div class="login-container">
+        <div class="login-aside">
+            <img src="~/images/register.jpg" alt="Đăng ký" class="welcome-image" />
+        </div>
 
-<p style="
-    display: flex;
-    justify-content: center;
-">Bắt đầu quản lý tài chính của bạn ngay hôm nay.</p>
+        <div class="login-form-section">
+            <h2 class="form-title text-center">Tạo Tài Khoản Mới</h2>
+            <p class="form-subtitle text-center">Bắt đầu quản lý tài chính của bạn ngay hôm nay.</p>
 
-<div class="row" style="
-    display: flex;
-    justify-content: center;
-">
-    <div class="col-md-6">
-        <form asp-action="Register" method="post">
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Email"></label>
-                <input asp-for="Email" class="form-control" />
-                <span asp-validation-for="Email" class="text-danger"></span>
+            <form asp-action="Register" method="post" class="mt-4">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Email" class="form-label">Địa chỉ Email</label>
+                     <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                        <input asp-for="Email" class="form-control" placeholder="Nhập email của bạn" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Password" class="form-label">Mật khẩu</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        <input asp-for="Password" class="form-control" placeholder="Tối thiểu 8 ký tự và có ít nhất 1 chữ cái" />
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label asp-for="ConfirmPassword" class="form-label">Xác nhận Mật khẩu</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        <input asp-for="ConfirmPassword" class="form-control" placeholder="Nhập lại mật khẩu" />
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">ĐĂNG KÝ</button>
+                </div>
+            </form>
+
+            <div class="text-center mt-4">
+                <p class="register-link">Đã có tài khoản? <a asp-controller="Account" asp-action="Login">Đăng nhập ngay</a></p>
             </div>
-            <div class="form-group">
-                <label asp-for="Password"></label>
-                <input asp-for="Password" class="form-control" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ConfirmPassword"></label>
-                <input asp-for="ConfirmPassword" class="form-control" />
-                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-primary mt-3">Đăng Ký</button>
-        </form>
+        </div>
     </div>
 </div>

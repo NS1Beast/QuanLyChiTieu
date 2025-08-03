@@ -11,5 +11,9 @@ namespace QuanLyChiTieu.ViewModels
         [Required(ErrorMessage = "Vui lòng nhập Mật khẩu.")]
         [DataType(DataType.Password)]
         public string Password { get; set; }
+
+        // THÊM THUỘC TÍNH NÀY
+        [Display(Name = "Ghi nhớ tôi")]
+        public bool RememberMe { get; set; }
     }
 }

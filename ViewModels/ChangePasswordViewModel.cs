@@ -10,9 +10,12 @@ namespace QuanLyChiTieu.ViewModels
         public string OldPassword { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
-        [StringLength(100, ErrorMessage = "{0} phải có ít nhất {2} ký tự.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Mật khẩu mới")]
+        // CẬP NHẬT RÀNG BUỘC MẬT KHẨU TẠI ĐÂY
+        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự.")]
+        [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d).{8,}$",
+            ErrorMessage = "Mật khẩu phải chứa ít nhất một chữ cái và một số.")]
         public string NewPassword { get; set; }
 
         [DataType(DataType.Password)]
@@ -20,7 +23,6 @@ namespace QuanLyChiTieu.ViewModels
         [Compare("NewPassword", ErrorMessage = "Mật khẩu mới và mật khẩu xác nhận không khớp.")]
         public string ConfirmPassword { get; set; }
 
-        // THÊM TRƯỜNG NÀY VÀO
         [Required(ErrorMessage = "Vui lòng nhập mã OTP.")]
         [Display(Name = "Mã OTP")]
         public string Otp { get; set; }

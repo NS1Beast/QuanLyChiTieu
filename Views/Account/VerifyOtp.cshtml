@@ -4,20 +4,36 @@
     Layout = "~/Views/Shared/_LayoutLanding.cshtml";
 }
 
-<h2>Xác thực tài khoản</h2>
-<p>Một mã OTP đã được gửi đến email <strong>@Model.Email</strong>. Vui lòng kiểm tra và nhập vào ô bên dưới.</p>
+<div class="login-page-wrapper">
+    <div class="login-container">
+        <div class="login-aside">
+            <img src="~/images/register.jpg" alt="Xác thực OTP" class="welcome-image" />
+        </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="VerifyOtp" method="post">
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <input type="hidden" asp-for="Email" />
-            <div class="form-group">
-                <label asp-for="Otp">Mã OTP</label>
-                <input asp-for="Otp" class="form-control" />
-                <span asp-validation-for="Otp" class="text-danger"></span>
+        <div class="login-form-section">
+            <h2 class="form-title text-center">Xác thực Tài khoản</h2>
+            <p class="form-subtitle text-center">Một mã OTP gồm 6 số đã được gửi đến email <strong>@Model.Email</strong>. Vui lòng kiểm tra và nhập vào ô bên dưới.</p>
+
+            <form asp-action="VerifyOtp" method="post" class="mt-4">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="Email" />
+
+                <div class="form-group mb-4">
+                    <label asp-for="Otp" class="form-label">Mã OTP</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-shield-lock-fill"></i></span>
+                        <input asp-for="Otp" class="form-control" placeholder="Nhập mã gồm 6 số" required />
+                    </div>
+                    <span asp-validation-for="Otp" class="text-danger"></span>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">XÁC NHẬN</button>
+                </div>
+            </form>
+             <div class="text-center mt-4">
+                <a asp-controller="Account" asp-action="Login" class="forgot-password-link">Quay lại Đăng nhập</a>
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Xác Nhận</button>
-        </form>
+        </div>
     </div>
 </div>

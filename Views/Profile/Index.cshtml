@@ -12,10 +12,10 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 }
-@if (ViewBag.ErrorMessage != null)
+@if (ViewBag.ErrorMessage != null || TempData["PasswordError"] != null)
 {
-         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @ViewBag.ErrorMessage
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @(ViewBag.ErrorMessage ?? TempData["PasswordError"])
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 }
@@ -23,25 +23,20 @@
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Thông tin cá nhân</h5>
-            </div>
+            <div class="card-header"><h5 class="card-title mb-0">Thông tin cá nhân</h5></div>
             <div class="card-body">
                 <form asp-action="UpdateProfile" method="post">
                     @Html.AntiForgeryToken()
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
                     <div class="mb-3">
                         <label asp-for="Email" class="form-label">Email</label>
                         <input asp-for="Email" class="form-control" readonly />
                     </div>
-
                     <div class="mb-3">
                         <label asp-for="HoTen" class="form-label">Họ và Tên</label>
                         <input asp-for="HoTen" class="form-control" />
                         <span asp-validation-for="HoTen" class="text-danger"></span>
                     </div>
-
                     <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                 </form>
             </div>
@@ -50,9 +45,7 @@
 
     <div class="col-lg-6">
         <div class="card h-100">
-             <div class="card-header">
-                <h5 class="card-title mb-0">Bảo mật & Mật khẩu</h5>
-            </div>
+            <div class="card-header"><h5 class="card-title mb-0">Bảo mật & Mật khẩu</h5></div>
             <div class="card-body">
                 <p>Để bảo vệ tài khoản, hãy sử dụng mật khẩu mạnh và thay đổi định kỳ.</p>
                 <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
@@ -63,6 +56,21 @@
     </div>
 </div>
 
+<div class="row g-4 mt-1">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger-soft">
+                <h5 class="card-title mb-0 text-danger">Vùng nguy hiểm</h5>
+            </div>
+            <div class="card-body">
+                <p>Một khi bạn xóa tài khoản, sẽ không có đường quay lại. Toàn bộ dữ liệu chi tiêu của bạn sẽ bị xóa vĩnh viễn. Xin hãy chắc chắn.</p>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                    Xóa tài khoản của tôi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -74,7 +82,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
+                     <div class="mb-3">
                         <label asp-for="@changePasswordModel.OldPassword" class="form-label"></label>
                         <input asp-for="@changePasswordModel.OldPassword" class="form-control" required />
                     </div>
@@ -105,42 +113,82 @@
     </div>
 </div>
 
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="DeleteAccountConfirmed" method="post" onsubmit="return confirm('CẢNH BÁO: Bạn có thực sự chắc chắn muốn xóa vĩnh viễn tài khoản và toàn bộ dữ liệu của mình không? Hành động này không thể hoàn tác.');">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteAccountModalLabel">Xác nhận Xóa Tài khoản</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-danger fw-bold">Đây là một hành động không thể đảo ngược.</p>
+                    <p>Để xác nhận, vui lòng nhấn "Gửi mã" để nhận OTP qua email, sau đó nhập mã vào ô bên dưới và nhấn "Xóa vĩnh viễn".</p>
+                    <hr/>
+                    <div class="mb-3">
+                        <label for="otp" class="form-label">Mã OTP</label>
+                        <div class="input-group">
+                            <input type="text" name="otp" class="form-control" placeholder="Nhập mã OTP gồm 6 số" required />
+                            <button class="btn btn-outline-secondary" type="button" id="sendDeleteOtpButton">Gửi mã</button>
+                        </div>
+                        <small id="deleteOtpMessage" class="form-text text-muted">Mã OTP sẽ được gửi đến email <strong>@User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value</strong>.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                // Script cho modal đổi mật khẩu
                 const sendOtpButton = document.getElementById('sendOtpButton');
-                const otpMessage = document.getElementById('otpMessage');
-                const tokenInput = document.querySelector('#changePasswordModal input[name="__RequestVerificationToken"]');
-
                 if (sendOtpButton) {
+                    const otpMessage = document.getElementById('otpMessage');
+                    const tokenInput = document.querySelector('#changePasswordModal input[name="__RequestVerificationToken"]');
                     sendOtpButton.addEventListener('click', function() {
                         sendOtpButton.disabled = true;
                         otpMessage.textContent = 'Đang gửi...';
-                        otpMessage.className = 'form-text text-muted';
-
                         fetch('@Url.Action("SendPasswordChangeOtp", "Profile")', {
                             method: 'POST',
-                            headers: {
-                                // Lấy token từ input ẩn trong form
-                                'RequestVerificationToken': tokenInput.value 
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                otpMessage.textContent = data.message;
-                                otpMessage.className = 'form-text text-success';
-                            } else {
-                                otpMessage.textContent = 'Lỗi: ' + (data.message || 'Không thể gửi OTP.');
-                                otpMessage.className = 'form-text text-danger';
-                                sendOtpButton.disabled = false;
-                            }
-                        })
-                        .catch(error => {
-                             console.error('Error:', error);
-                             otpMessage.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
-                             otpMessage.className = 'form-text text-danger';
-                             sendOtpButton.disabled = false;
+                            headers: { 'RequestVerificationToken': tokenInput.value }
+                        }).then(response => response.json()).then(data => {
+                            otpMessage.className = data.success ? 'form-text text-success' : 'form-text text-danger';
+                            otpMessage.textContent = data.message || 'Có lỗi xảy ra.';
+                            if (!data.success) { sendOtpButton.disabled = false; }
+                        }).catch(error => {
+                            otpMessage.textContent = 'Lỗi kết nối.';
+                            sendOtpButton.disabled = false;
+                        });
+                    });
+                }
+
+                // Script cho modal xóa tài khoản
+                const sendDeleteOtpButton = document.getElementById('sendDeleteOtpButton');
+                if (sendDeleteOtpButton) {
+                    const deleteOtpMessage = document.getElementById('deleteOtpMessage');
+                    const deleteTokenInput = document.querySelector('#deleteAccountModal input[name="__RequestVerificationToken"]');
+                    sendDeleteOtpButton.addEventListener('click', function() {
+                        sendDeleteOtpButton.disabled = true;
+                        deleteOtpMessage.textContent = 'Đang gửi...';
+                        fetch('@Url.Action("SendDeleteAccountOtp", "Profile")', {
+                            method: 'POST',
+                            // SỬA LỖI TẠI ĐÂY: Bỏ dấu gạch ngang
+                            headers: { 'RequestVerificationToken': deleteTokenInput.value }
+                        }).then(response => response.json()).then(data => {
+                            deleteOtpMessage.className = data.success ? 'form-text text-success' : 'form-text text-danger';
+                            deleteOtpMessage.textContent = data.message || 'Có lỗi xảy ra.';
+                            if (!data.success) { sendDeleteOtpButton.disabled = false; }
+                        }).catch(error => {
+                            console.error('Error:', error);
+                            deleteOtpMessage.textContent = 'Lỗi kết nối.';
+                            sendDeleteOtpButton.disabled = false;
                         });
                     });
                 }

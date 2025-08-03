@@ -1,17 +1,19 @@
 ﻿using MailKit.Net.Smtp;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options; // Thêm using này
 using MimeKit;
-using Microsoft.Extensions.Logging; // Thêm using cho ILogger
 
 namespace QuanLyChiTieu.Services
 {
-    // Lớp này dùng để gửi email thật sự
     public class SmtpEmailService : IEmailService
     {
+        private readonly MailSettings _mailSettings;
         private readonly ILogger<SmtpEmailService> _logger;
 
-        // Sử dụng ILogger để ghi lại lỗi tốt hơn
-        public SmtpEmailService(ILogger<SmtpEmailService> logger)
+        // CẬP NHẬT: Tiêm IOptions<MailSettings> vào constructor để đọc cấu hình
+        public SmtpEmailService(IOptions<MailSettings> mailSettings, ILogger<SmtpEmailService> logger)
         {
+            _mailSettings = mailSettings.Value;
             _logger = logger;
         }
 
@@ -21,8 +23,8 @@ namespace QuanLyChiTieu.Services
             {
                 var emailMessage = new MimeMessage();
 
-                // SỬA LỖI 1: Email người gửi phải khớp với email xác thực
-                emailMessage.From.Add(new MailboxAddress("Quản Lý Chi Tiêu", "fvgfv123nam@gmail.com"));
+                // CẬP NHẬT: Sử dụng thông tin từ _mailSettings
+                emailMessage.From.Add(new MailboxAddress(_mailSettings.DisplayName, _mailSettings.Mail));
                 emailMessage.To.Add(new MailboxAddress("", email));
                 emailMessage.Subject = subject;
 
@@ -31,11 +33,9 @@ namespace QuanLyChiTieu.Services
 
                 using (var client = new SmtpClient())
                 {
-                    // SỬA LỖI 2: Phải dùng SMTP server của Gmail
-                    await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-
-                    // Thông tin xác thực của bạn (đã đúng)
-                    await client.AuthenticateAsync("fvgfv123nam@gmail.com", "wqve qbwc nojg fzyc");
+                    // CẬP NHẬT: Sử dụng thông tin từ _mailSettings
+                    await client.ConnectAsync(_mailSettings.Host, _mailSettings.Port, MailKit.Security.SecureSocketOptions.StartTls);
+                    await client.AuthenticateAsync(_mailSettings.Mail, _mailSettings.Password);
 
                     await client.SendAsync(emailMessage);
                     await client.DisconnectAsync(true);
@@ -43,7 +43,6 @@ namespace QuanLyChiTieu.Services
             }
             catch (Exception ex)
             {
-                // Ghi lại lỗi chi tiết thay vì chỉ in ra Console
                 _logger.LogError(ex, "Lỗi khi gửi email đến {ToEmail}", email);
             }
         }
