@@ -37,44 +37,55 @@
                                 <input type="file" asp-for="AvatarFile" id="avatarUpload" class="d-none" accept="image/*" />
                             </label>
                         </div>
-                        <span asp-validation-for="AvatarFile" class="text-danger d-block mt-2"></span>
+                         <span asp-validation-for="AvatarFile" class="text-danger d-block mt-2"></span>
                     </div>
+
                     <div class="mb-3">
                         <label asp-for="Email" class="form-label">Email</label>
-                        <input asp-for="Email" class="form-control" readonly />
+                        <div class="input-group">
+                             <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                             <input asp-for="Email" class="form-control" readonly />
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label asp-for="HoTen" class="form-label">Họ và Tên</label>
-                        <input asp-for="HoTen" class="form-control" />
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-badge-fill"></i></span>
+                            <input asp-for="HoTen" class="form-control" />
+                        </div>
                         <span asp-validation-for="HoTen" class="text-danger"></span>
                     </div>
+
                     <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-6"> <div class="card h-100"> <div class="card-header"><h5 class="card-title mb-0">Bảo mật & Mật khẩu</h5></div> <div class="card-body"> <p>Để bảo vệ tài khoản, hãy sử dụng mật khẩu mạnh và thay đổi định kỳ.</p> <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal"> Đổi Mật khẩu </button> </div> </div> </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h5 class="card-title mb-0">Bảo mật & Mật khẩu</h5></div>
+            <div class="card-body">
+                <p>Để bảo vệ tài khoản, hãy sử dụng mật khẩu mạnh và thay đổi định kỳ.</p>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    Đổi Mật khẩu
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="row g-4 mt-1"> <div class="col-12"> <div class="card border-danger"> <div class="card-header bg-danger-soft"> <h5 class="card-title mb-0 text-danger">Vùng nguy hiểm</h5> </div> <div class="card-body"> <p>Một khi bạn xóa tài khoản, sẽ không có đường quay lại. Toàn bộ dữ liệu chi tiêu của bạn sẽ bị xóa vĩnh viễn. Xin hãy chắc chắn.</p> <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal"> Xóa tài khoản của tôi </button> </div> </div> </div> </div>
-<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true"> <div class="modal-dialog"> <div class="modal-content"> <form asp-action="ChangePassword" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn đổi mật khẩu không?');"> @Html.AntiForgeryToken() <div class="modal-header"> <h5 class="modal-title" id="changePasswordModalLabel">Đổi Mật khẩu</h5> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> </div> <div class="modal-body"> <div class="mb-3"> <label asp-for="@changePasswordModel.OldPassword" class="form-label"></label> <input asp-for="@changePasswordModel.OldPassword" class="form-control" required /> </div> <div class="mb-3"> <label asp-for="@changePasswordModel.NewPassword" class="form-label"></label> <input asp-for="@changePasswordModel.NewPassword" class="form-control" required /> </div> <div class="mb-3"> <label asp-for="@changePasswordModel.ConfirmPassword" class="form-label"></label> <input asp-for="@changePasswordModel.ConfirmPassword" class="form-control" required /> </div> <hr/> <div class="mb-3"> <label asp-for="@changePasswordModel.Otp" class="form-label"></label> <div class="input-group"> <input asp-for="@changePasswordModel.Otp" class="form-control" placeholder="Nhập mã OTP gồm 6 số" required /> <button class="btn btn-outline-secondary" type="button" id="sendOtpButton">Gửi mã</button> </div> <small id="otpMessage" class="form-text text-muted">Nhấn "Gửi mã" để nhận OTP qua email.</small> </div> </div> <div class="modal-footer"> <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button> <button type="submit" class="btn btn-primary">Xác nhận</button> </div> </form> </div> </div> </div>
-<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true"> <div class="modal-dialog"> <div class="modal-content"> <form asp-action="DeleteAccountConfirmed" method="post" onsubmit="return confirm('CẢNH BÁO: Bạn có thực sự chắc chắn muốn xóa vĩnh viễn tài khoản và toàn bộ dữ liệu của mình không? Hành động này không thể hoàn tác.');"> @Html.AntiForgeryToken() <div class="modal-header"> <h5 class="modal-title" id="deleteAccountModalLabel">Xác nhận Xóa Tài khoản</h5> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> </div> <div class="modal-body"> <p class="text-danger fw-bold">Đây là một hành động không thể đảo ngược.</p> <p>Để xác nhận, vui lòng nhấn "Gửi mã" để nhận OTP qua email, sau đó nhập mã vào ô bên dưới và nhấn "Xóa vĩnh viễn".</p> <hr/> <div class="mb-3"> <label for="otp" class="form-label">Mã OTP</label> <div class="input-group"> <input type="text" name="otp" class="form-control" placeholder="Nhập mã OTP gồm 6 số" required /> <button class="btn btn-outline-secondary" type="button" id="sendDeleteOtpButton">Gửi mã</button> </div> <small id="deleteOtpMessage" class="form-text text-muted">Mã OTP sẽ được gửi đến email <strong>@User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value</strong>.</small> </div> </div> <div class="modal-footer"> <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button> <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button> </div> </form> </div> </div> </div>
 
+<div class="row g-4 mt-1"> <div class="col-12"> <div class="card border-danger"> <div class="card-header bg-danger-soft"> <h5 class="card-title mb-0 text-danger">Vùng nguy hiểm</h5> </div> <div class="card-body"> <p>Một khi bạn xóa tài khoản, sẽ không có đường quay lại. Toàn bộ dữ liệu chi tiêu của bạn sẽ bị xóa vĩnh viễn. Xin hãy chắc chắn.</p> <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal"> Xóa tài khoản của tôi </button> </div> </div> </div> </div>
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true"> <div class="modal-dialog"> <div class="modal-content"> <form asp-action="ChangePassword" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn đổi mật khẩu không?');"> @Html.AntiForgeryToken() <div class="modal-header"> <h5 class="modal-title" id="changePasswordModalLabel">Đổi Mật khẩu</h5> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> </div> <div class="modal-body"> <div class="mb-3"> <label for="OldPassword" class="form-label">Mật khẩu cũ</label> <input name="OldPassword" type="password" class="form-control" required /> </div> <div class="mb-3"> <label for="NewPassword" class="form-label">Mật khẩu mới</label> <input name="NewPassword" type="password" class="form-control" required /> </div> <div class="mb-3"> <label for="ConfirmPassword" class="form-label">Xác nhận mật khẩu mới</label> <input name="ConfirmPassword" type="password" class="form-control" required /> </div> <hr/> <div class="mb-3"> <label for="Otp" class="form-label">Mã OTP</label> <div class="input-group"> <input name="Otp" type="text" class="form-control" placeholder="Nhập mã OTP gồm 6 số" required /> <button class="btn btn-outline-secondary" type="button" id="sendOtpButton">Gửi mã</button> </div> <small id="otpMessage" class="form-text text-muted">Nhấn "Gửi mã" để nhận OTP qua email.</small> </div> </div> <div class="modal-footer"> <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button> <button type="submit" class="btn btn-primary">Xác nhận</button> </div> </form> </div> </div> </div>
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true"> <div class="modal-dialog"> <div class="modal-content"> <form asp-action="DeleteAccountConfirmed" method="post" onsubmit="return confirm('CẢNH BÁO: Bạn có thực sự chắc chắn muốn xóa vĩnh viễn tài khoản và toàn bộ dữ liệu của mình không? Hành động này không thể hoàn tác.');"> @Html.AntiForgeryToken() <div class="modal-header"> <h5 class="modal-title" id="deleteAccountModalLabel">Xác nhận Xóa Tài khoản</h5> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> </div> <div class="modal-body"> <p class="text-danger fw-bold">Đây là một hành động không thể đảo ngược.</p> <p>Để xác nhận, vui lòng nhấn "Gửi mã" để nhận OTP qua email, sau đó nhập mã vào ô bên dưới và nhấn "Xóa vĩnh viễn".</p> <hr/> <div class="mb-3"> <label for="otp" class="form-label">Mã OTP</label> <div class="input-group"> <input type="text" name="otp" class="form-control" placeholder="Nhập mã OTP gồm 6 số" required /> <button class="btn btn-outline-secondary" type="button" id="sendDeleteOtpButton">Gửi mã</button> </div> <small id="deleteOtpMessage" class="form-text text-muted">Mã OTP sẽ được gửi đến email <strong>@User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value</strong>.</small> </div> </div> <div class="modal-footer"> <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button> <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button> </div> </form> </div> </div> </div>
 
 @section Scripts {
         <style>
-            .avatar-img {
-                width: 120px;
-                height: 120px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 3px solid var(--border-color);
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            }
+            .avatar-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         </style>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // ----- Script cho modal đổi mật khẩu -----
+                // Script cho modal đổi mật khẩu
                 const sendOtpButton = document.getElementById('sendOtpButton');
                 if (sendOtpButton) {
                     const otpMessage = document.getElementById('otpMessage');
@@ -96,7 +107,7 @@
                     });
                 }
 
-                // ----- Script cho modal xóa tài khoản -----
+                // Script cho modal xóa tài khoản
                 const sendDeleteOtpButton = document.getElementById('sendDeleteOtpButton');
                 if (sendDeleteOtpButton) {
                     const deleteOtpMessage = document.getElementById('deleteOtpMessage');
@@ -119,10 +130,9 @@
                     });
                 }
 
-                // ----- SCRIPT XEM TRƯỚC ẢNH ĐẠI DIỆN -----
+                // SCRIPT XEM TRƯỚC ẢNH ĐẠI DIỆN
                 const avatarUpload = document.getElementById('avatarUpload');
                 const avatarPreview = document.getElementById('avatarPreview');
-
                 if (avatarUpload) {
                     avatarUpload.addEventListener('change', function(event) {
                         if (event.target.files && event.target.files[0]) {
@@ -138,7 +148,6 @@
         </script>
 
     @{
-        // Thêm dòng này để validation hoạt động
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }

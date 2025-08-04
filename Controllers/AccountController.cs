@@ -13,7 +13,7 @@ using System.Linq;
 
 namespace QuanLyChiTieu.Controllers
 {
-    [AllowAnonymous]
+    [AllowAnonymous] // Cho phép tất cả người dùng truy cập các action trong controller này
     public class AccountController : Controller
     {
         private readonly DataBase_DoAnContext _context;
@@ -25,15 +25,32 @@ namespace QuanLyChiTieu.Controllers
             _emailService = emailService;
         }
 
-        private string HashPassword(string password) { using (var sha256 = SHA256.Create()) { var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password)); return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower(); } }
+        /// <summary>
+        /// Băm mật khẩu bằng thuật toán SHA256.
+        /// </summary>
+        private string HashPassword(string password)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
+            }
+        }
 
-        // CẬP NHẬT 1: Sửa lại hàm SignInUserAsync để nhận giá trị "isPersistent"
+        /// <summary>
+        /// Tạo cookie xác thực cho người dùng.
+        /// </summary>
+        /// <param name="user">Đối tượng người dùng.</param>
+        /// <param name="isPersistent">True nếu người dùng chọn "Ghi nhớ tôi".</param>
         private async Task SignInUserAsync(NguoiDung user, bool isPersistent)
         {
             var claims = new List<Claim>
             {
+                // Claim Name dùng để hiển thị (VD: Chào, Anh Tuấn)
                 new Claim(ClaimTypes.Name, !string.IsNullOrWhiteSpace(user.HoTen) ? user.HoTen : user.Email),
+                // Claim Email để sử dụng nội bộ khi cần
                 new Claim(ClaimTypes.Email, user.Email),
+                // Claim NameIdentifier chứa ID của người dùng, rất quan trọng
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
@@ -41,7 +58,12 @@ namespace QuanLyChiTieu.Controllers
             await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
         }
 
-        [HttpGet] public IActionResult Register() => View();
+        #region Đăng ký
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View();
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -54,15 +76,19 @@ namespace QuanLyChiTieu.Controllers
                     ModelState.AddModelError(string.Empty, "Email này đã được đăng ký.");
                     return View(model);
                 }
+
                 var otpCode = new Random().Next(100000, 999999).ToString();
                 var otp = new Otp { Email = model.Email, MaOtp = otpCode, ThoiGianTao = DateTime.Now };
                 _context.Otps.Add(otp);
                 await _context.SaveChangesAsync();
+
                 TempData["PendingUserEmail"] = model.Email;
                 TempData["PendingUserPassword"] = HashPassword(model.Password);
+
                 var subject = "Mã OTP xác thực tài khoản";
                 var message = $"<p>Chào bạn,</p><p>Mã OTP để xác thực tài khoản của bạn là: <strong>{otpCode}</strong></p><p>Mã này sẽ hết hạn sau 5 phút.</p>";
                 await _emailService.SendEmailAsync(model.Email, subject, message);
+
                 return RedirectToAction("VerifyOtp", new { email = model.Email });
             }
             return View(model);
@@ -81,6 +107,7 @@ namespace QuanLyChiTieu.Controllers
         {
             TempData.Keep("PendingUserEmail");
             TempData.Keep("PendingUserPassword");
+
             if (ModelState.IsValid)
             {
                 var otpRecord = await _context.Otps.FirstOrDefaultAsync(o => o.Email == model.Email && o.MaOtp == model.Otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
@@ -89,6 +116,7 @@ namespace QuanLyChiTieu.Controllers
                     ModelState.AddModelError(string.Empty, "Mã OTP không hợp lệ hoặc đã hết hạn.");
                     return View(model);
                 }
+
                 var email = TempData["PendingUserEmail"] as string;
                 var hashedPassword = TempData["PendingUserPassword"] as string;
                 if (email != model.Email || string.IsNullOrEmpty(hashedPassword))
@@ -96,18 +124,20 @@ namespace QuanLyChiTieu.Controllers
                     ModelState.AddModelError(string.Empty, "Phiên đăng ký đã hết hạn, vui lòng thử lại.");
                     return View(model);
                 }
+
                 var newUser = new NguoiDung { Email = email, MatKhau = hashedPassword, NgayDangKy = DateTime.Now };
                 _context.NguoiDungs.Add(newUser);
                 otpRecord.TrangThai = true;
                 await _context.SaveChangesAsync();
 
-                // CẬP NHẬT 2: Tự động đăng nhập sau khi đăng ký sẽ không ghi nhớ (phiên làm việc tạm thời)
                 await SignInUserAsync(newUser, isPersistent: false);
                 return RedirectToAction("Index", "Dashboard");
             }
             return View(model);
         }
+        #endregion
 
+        #region Đăng nhập / Đăng xuất
         [HttpGet]
         public IActionResult Login()
         {
@@ -128,7 +158,6 @@ namespace QuanLyChiTieu.Controllers
                 var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == model.Email && u.MatKhau == hashedPassword);
                 if (user != null)
                 {
-                    // CẬP NHẬT 3: Truyền giá trị của checkbox "RememberMe" vào hàm đăng nhập
                     await SignInUserAsync(user, model.RememberMe);
                     return RedirectToAction("Index", "Dashboard");
                 }
@@ -144,8 +173,14 @@ namespace QuanLyChiTieu.Controllers
             await HttpContext.SignOutAsync("MyCookieAuth");
             return RedirectToAction("Index", "Home");
         }
+        #endregion
 
-        [HttpGet] public IActionResult ForgotPassword() => View();
+        #region Quên & Đặt lại mật khẩu
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -196,19 +231,23 @@ namespace QuanLyChiTieu.Controllers
             {
                 var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == model.Email);
                 var otpRecord = await _context.Otps.FirstOrDefaultAsync(o => o.Email == model.Email && o.MaOtp == model.Otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
+
                 if (user == null || otpRecord == null)
                 {
                     ModelState.AddModelError(string.Empty, "Mã OTP không hợp lệ hoặc đã hết hạn.");
                     return View(model);
                 }
+
                 user.MatKhau = HashPassword(model.NewPassword);
                 otpRecord.TrangThai = true;
                 _context.Update(user);
                 await _context.SaveChangesAsync();
+
                 TempData["SuccessMessage"] = "Đặt lại mật khẩu thành công! Bây giờ bạn có thể đăng nhập.";
                 return RedirectToAction("Login");
             }
             return View(model);
         }
+        #endregion
     }
 }
