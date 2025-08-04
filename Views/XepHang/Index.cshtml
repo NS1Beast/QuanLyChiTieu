@@ -1,0 +1,70 @@
+﻿@model QuanLyChiTieu.ViewModels.XepHangViewModel
+@{
+    ViewData["Title"] = "Bảng Xếp hạng Chi tiêu";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>Bảng Xếp Hạng Tháng @DateTime.Now.Month</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Top 3 người dùng có chi tiêu cao nhất tháng này (ẩn danh).</p>
+                @if (Model.TopSpenders.Any())
+                {
+                        <ul class="list-group list-group-flush">
+                        @foreach (var spender in Model.TopSpenders)
+                        {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                    @if (spender.Rank == 1)
+                                    {
+                                        <span>🥇 Người dùng Vô địch</span>
+                                    }
+                                    else if (spender.Rank == 2)
+                                    {
+                                        <span>🥈 Người dùng Á quân</span>
+                                    }
+                                    else if (spender.Rank == 3)
+                                    {
+                                        <span>🥉 Người dùng Quý quân</span>
+                                    }
+                                        </div>
+                                        <span class="fw-bold">@spender.TotalAmount.ToString("N0") ₫</span>
+                                    </li>
+                        }
+                        </ul>
+                }
+                else
+                {
+                        <p class="text-center text-muted p-3">Chưa có ai chi tiêu trong tháng này để xếp hạng.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100 bg-primary text-white">
+            <div class="card-header bg-transparent border-bottom-0">
+                 <h5 class="card-title mb-0 text-white"><i class="bi bi-person-check-fill me-2"></i>Thứ hạng của bạn</h5>
+            </div>
+            <div class="card-body text-center">
+                @if (Model.CurrentUserRank > 0)
+                {
+                        <p>Trong tháng này, bạn đã chi tiêu:</p>
+                        <h1 class="display-4 fw-bold">@Model.CurrentUserSpending.ToString("N0") ₫</h1>
+                        <p class="mt-3">Xếp thứ <strong>@Model.CurrentUserRank</strong> trên tổng số <strong>@Model.TotalUsersRanked</strong> người dùng đã chi tiêu.</p>
+                }
+                else
+                {
+                        <div class="d-flex flex-column justify-content-center h-100">
+                            <p class="fs-5">Bạn chưa có chi tiêu nào trong tháng này để xếp hạng.</p>
+                            <p>Hãy <a asp-controller="ChiTieu" asp-action="Create" class="text-white fw-bold">thêm một khoản chi mới</a> để bắt đầu!</p>
+                        </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
