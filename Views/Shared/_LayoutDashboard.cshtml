@@ -93,20 +93,25 @@
                 <h5 class="page-title">@ViewData["Title"]</h5>
             </div>
             <div class="navbar-right">
-                <button id="theme-toggler" class="btn-icon" title="Đổi giao diện Sáng/Tối">
-                    <i class="bi bi-moon-stars-fill"></i>
-                </button>
+    <button id="theme-toggler" class="btn-icon" title="Đổi giao diện Sáng/Tối">
+        <i class="bi bi-moon-stars-fill"></i>
+    </button>
+
+                @await Component.InvokeAsync("Notification")
 
                 @if (User.Identity.IsAuthenticated)
                 {
-                        <span class="user-info">Chào, @User.Identity.Name</span>
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                            <button type="submit" class="btn-icon logout-btn" title="Đăng xuất">
-                                <i class="bi bi-box-arrow-right"></i>
-                            </button>
-                        </form>
+                    @await Component.InvokeAsync("Avatar")
+
+            <span class="user-info">Chào, @User.Identity.Name</span>
+            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                <button type="submit" class="btn-icon logout-btn" title="Đăng xuất">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </form>
                 }
-            </div>
+</div>
         </nav>
 
         <main class="content-wrapper">

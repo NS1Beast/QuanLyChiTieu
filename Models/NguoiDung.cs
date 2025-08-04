@@ -34,6 +34,9 @@ public partial class NguoiDung
 
     public TimeOnly? GioNhanNhac { get; set; }
 
+    [StringLength(512)]
+    public string? AvatarUrl { get; set; }
+
     [InverseProperty("NguoiDung")]
     public virtual ICollection<ChiTieu> ChiTieus { get; set; } = new List<ChiTieu>();
 

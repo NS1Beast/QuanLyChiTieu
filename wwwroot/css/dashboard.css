@@ -327,3 +327,11 @@ body {
 .card-body a {
     color: var(--primary-color);
 }
+/* Thêm vào cuối file */
+.navbar-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}

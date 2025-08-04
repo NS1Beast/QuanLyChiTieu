@@ -8,8 +8,10 @@ using QuanLyChiTieu.ViewModels;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Linq; // Thêm using này nếu chưa có
-using Microsoft.AspNetCore.Authentication; // Thêm using này nếu chưa có
+using System.Linq;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 namespace QuanLyChiTieu.Controllers
 {
@@ -18,11 +20,13 @@ namespace QuanLyChiTieu.Controllers
     {
         private readonly DataBase_DoAnContext _context;
         private readonly IEmailService _emailService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProfileController(DataBase_DoAnContext context, IEmailService emailService)
+        public ProfileController(DataBase_DoAnContext context, IEmailService emailService, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _emailService = emailService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         private string HashPassword(string password)
@@ -44,7 +48,12 @@ namespace QuanLyChiTieu.Controllers
             var user = await _context.NguoiDungs.FindAsync(userId);
             if (user == null) return NotFound();
 
-            var viewModel = new ProfileViewModel { Email = user.Email, HoTen = user.HoTen };
+            var viewModel = new ProfileViewModel
+            {
+                Email = user.Email,
+                HoTen = user.HoTen,
+                AvatarUrl = user.AvatarUrl
+            };
             return View(viewModel);
         }
 
@@ -53,18 +62,44 @@ namespace QuanLyChiTieu.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile(ProfileViewModel model)
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var user = await _context.NguoiDungs.FindAsync(userId);
+            if (user == null) return NotFound();
+
             if (ModelState.IsValid)
             {
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var user = await _context.NguoiDungs.FindAsync(userId);
-                if (user == null) return NotFound();
-
                 user.HoTen = model.HoTen;
+
+                if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+                {
+                    if (!string.IsNullOrEmpty(user.AvatarUrl))
+                    {
+                        var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, user.AvatarUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "avatars");
+                    if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                    
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetExtension(model.AvatarFile.FileName);
+                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.AvatarFile.CopyToAsync(fileStream);
+                    }
+                    user.AvatarUrl = "/uploads/avatars/" + uniqueFileName;
+                }
+
                 _context.Update(user);
                 await _context.SaveChangesAsync();
 
                 return RedirectToAction("Index", new { message = "Cập nhật thông tin thành công!" });
             }
+            model.AvatarUrl = user.AvatarUrl;
             return View("Index", model);
         }
 
@@ -122,14 +157,11 @@ namespace QuanLyChiTieu.Controllers
 
             user.MatKhau = HashPassword(model.NewPassword);
             otpRecord.TrangThai = true;
-
             _context.Update(user);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index", new { message = "Đổi mật khẩu thành công!" });
         }
-
-        // === CÁC ACTION MỚI CHO CHỨC NĂNG XÓA TÀI KHOẢN ===
 
         // POST: /Profile/SendDeleteAccountOtp
         [HttpPost]
@@ -138,21 +170,15 @@ namespace QuanLyChiTieu.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var user = await _context.NguoiDungs.FindAsync(userId);
-            if (user == null)
-            {
-                return Json(new { success = false, message = "Không tìm thấy người dùng." });
-            }
-
+            if (user == null) { return Json(new { success = false, message = "Không tìm thấy người dùng." }); }
+            
             var otpCode = new Random().Next(100000, 999999).ToString();
             var otp = new Otp { Email = user.Email, MaOtp = otpCode, ThoiGianTao = DateTime.Now };
             _context.Otps.Add(otp);
             await _context.SaveChangesAsync();
-
+            
             var subject = "Yêu cầu Xóa Tài khoản - Mã OTP Xác nhận";
-            var message = $"<p>Chào {user.HoTen ?? "bạn"},</p>" +
-                          $"<p>Chúng tôi đã nhận được yêu cầu xóa tài khoản của bạn. Vui lòng sử dụng mã OTP sau để xác nhận. " +
-                          $"<strong>Lưu ý: Hành động này không thể hoàn tác.</strong></p>" +
-                          $"<p>Mã OTP của bạn là: <strong>{otpCode}</strong></p>";
+            var message = $"<p>Chào {user.HoTen ?? "bạn"},</p><p>Chúng tôi đã nhận được yêu cầu xóa tài khoản của bạn. Vui lòng sử dụng mã OTP sau để xác nhận. <strong>Lưu ý: Hành động này không thể hoàn tác.</strong></p><p>Mã OTP của bạn là: <strong>{otpCode}</strong></p>";
             await _emailService.SendEmailAsync(user.Email, subject, message);
 
             return Json(new { success = true, message = "Mã OTP đã được gửi đến email của bạn." });
@@ -165,28 +191,19 @@ namespace QuanLyChiTieu.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var user = await _context.NguoiDungs.FindAsync(userId);
-            if (user == null)
-            {
-                // Người dùng có thể đã bị xóa trong một request khác, chuyển hướng an toàn
-                return RedirectToAction("Index", "Home");
-            }
+            if (user == null) { return RedirectToAction("Index", "Home"); }
 
-            var otpRecord = await _context.Otps
-                .FirstOrDefaultAsync(o => o.Email == user.Email && o.MaOtp == otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
-
+            var otpRecord = await _context.Otps.FirstOrDefaultAsync(o => o.Email == user.Email && o.MaOtp == otp && o.TrangThai == false && o.ThoiGianTao.HasValue && o.ThoiGianTao.Value.AddMinutes(5) > DateTime.Now);
             if (otpRecord == null)
             {
                 TempData["PasswordError"] = "Mã OTP không hợp lệ hoặc đã hết hạn. Yêu cầu xóa tài khoản đã bị hủy.";
                 return RedirectToAction("Index");
             }
-
-            // Mọi thứ hợp lệ, tiến hành xóa
+            
             _context.NguoiDungs.Remove(user);
             await _context.SaveChangesAsync();
-
-            // Đăng xuất người dùng
             await HttpContext.SignOutAsync("MyCookieAuth");
-
+            
             TempData["SuccessMessage"] = "Tài khoản của bạn đã được xóa thành công. Cảm ơn bạn đã sử dụng dịch vụ!";
             return RedirectToAction("Index", "Home");
         }
