@@ -39,7 +39,8 @@ namespace QuanLyChiTieu.Migrations
                     LoaiTaiKhoan = table.Column<int>(type: "int", nullable: true, defaultValue: 0),
                     NhanEmailNhacNho = table.Column<bool>(type: "bit", nullable: true, defaultValue: true),
                     TanSuatNhanNhac = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true, defaultValue: "HangTuan"),
-                    GioNhanNhac = table.Column<TimeOnly>(type: "time", nullable: true, defaultValue: new TimeOnly(18, 0, 0))
+                    GioNhanNhac = table.Column<TimeOnly>(type: "time", nullable: true, defaultValue: new TimeOnly(18, 0, 0)),
+                    AvatarUrl = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true)
                 },
                 constraints: table =>
                 {

@@ -180,6 +180,10 @@ namespace QuanLyChiTieu.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)

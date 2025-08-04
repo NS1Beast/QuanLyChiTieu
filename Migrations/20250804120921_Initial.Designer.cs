@@ -12,7 +12,7 @@ using QuanLyChiTieu.Data;
 namespace QuanLyChiTieu.Migrations
 {
     [DbContext(typeof(DataBase_DoAnContext))]
-    [Migration("20250801140817_Initial")]
+    [Migration("20250804120921_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -182,6 +182,10 @@ namespace QuanLyChiTieu.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
 
                     b.Property<string>("Email")
                         .IsRequired()
