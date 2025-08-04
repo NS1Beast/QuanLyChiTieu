@@ -18,6 +18,8 @@ public partial class DataBase_DoAnContext : DbContext
 
     public virtual DbSet<ChiTieu> ChiTieus { get; set; }
 
+    public virtual DbSet<ChiTieuTheoLich> ChiTieuTheoLiches { get; set; }
+
     public virtual DbSet<DanhMuc> DanhMucs { get; set; }
 
     public virtual DbSet<GioiHanChiTieu> GioiHanChiTieus { get; set; }
@@ -35,7 +37,8 @@ public partial class DataBase_DoAnContext : DbContext
     public virtual DbSet<VwThongKeChiTieu> VwThongKeChiTieus { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=ConnectionStrings:DefaultConnection");
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=MSI\\SQLEXPRESS;Database=DataBase_DoAn;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +55,19 @@ public partial class DataBase_DoAnContext : DbContext
                 .HasConstraintName("FK__ChiTieu__DanhMuc__440B1D61");
 
             entity.HasOne(d => d.NguoiDung).WithMany(p => p.ChiTieus).HasConstraintName("FK__ChiTieu__NguoiDu__4316F928");
+        });
+
+        modelBuilder.Entity<ChiTieuTheoLich>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ChiTieuT__3214EC07DDC555D6");
+
+            entity.Property(e => e.HoatDong).HasDefaultValue(true);
+
+            entity.HasOne(d => d.DanhMuc).WithMany(p => p.ChiTieuTheoLiches)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ChiTieuTh__DanhM__71D1E811");
+
+            entity.HasOne(d => d.NguoiDung).WithMany(p => p.ChiTieuTheoLiches).HasConstraintName("FK__ChiTieuTh__Nguoi__70DDC3D8");
         });
 
         modelBuilder.Entity<DanhMuc>(entity =>

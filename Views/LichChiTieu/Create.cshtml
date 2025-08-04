@@ -1,0 +1,72 @@
+﻿@model QuanLyChiTieu.Models.ChiTieuTheoLich
+
+@{
+    ViewData["Title"] = "Tạo Lịch Chi tiêu mới";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h4 class="card-title mb-0">Tạo Lịch Chi tiêu</h4></div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="TenChiTieu" class="form-label"></label>
+                        <input asp-for="TenChiTieu" class="form-control" placeholder="VD: Đóng học phí, Thanh toán vé máy bay..." />
+                        <span asp-validation-for="TenChiTieu" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="SoTien" class="form-label"></label>
+                            <input asp-for="SoTien" class="form-control" type="number" />
+                            <span asp-validation-for="SoTien" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                             <label asp-for="NgayThucHien" class="form-label">Ngày thực hiện</label>
+                             <input asp-for="NgayThucHien" class="form-control" type="date" />
+                             <span asp-validation-for="NgayThucHien" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DanhMucId" class="form-label"></label>
+                        <select asp-for="DanhMucId" class="form-select" asp-items="ViewBag.DanhMucId">
+                            <option value="">-- Chọn danh mục --</option>
+                        </select>
+                        <span asp-validation-for="DanhMucId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="GhiChu" class="form-label"></label>
+                        <textarea asp-for="GhiChu" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                         <button type="submit" class="btn btn-primary">Lưu Lịch</button>
+                         <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+        <script>
+            // THÊM SCRIPT NÀY ĐỂ CHẶN CHỌN NGÀY TRONG QUÁ KHỨ
+            document.addEventListener('DOMContentLoaded', function() {
+                var dateInput = document.getElementById('NgayThucHien');
+                if(dateInput) {
+                    var today = new Date().toISOString().split('T')[0];
+                    dateInput.setAttribute('min', today);
+                }
+            });
+        </script>
+}

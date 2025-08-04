@@ -63,7 +63,8 @@ builder.Services.AddHostedService<EmailReminderService>();
 
 // 9. CẬP NHẬT: Thêm dịch vụ SignalR
 builder.Services.AddSignalR();
-
+//10. Lịch chi tiêu
+builder.Services.AddHostedService<ScheduledTransactionService>();
 // Build ứng dụng
 var app = builder.Build();
 

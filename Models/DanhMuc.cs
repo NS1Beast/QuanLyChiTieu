@@ -21,6 +21,9 @@ public partial class DanhMuc
     public string? MauSac { get; set; }
 
     [InverseProperty("DanhMuc")]
+    public virtual ICollection<ChiTieuTheoLich> ChiTieuTheoLiches { get; set; } = new List<ChiTieuTheoLich>();
+
+    [InverseProperty("DanhMuc")]
     public virtual ICollection<ChiTieu> ChiTieus { get; set; } = new List<ChiTieu>();
 
     [InverseProperty("DanhMuc")]

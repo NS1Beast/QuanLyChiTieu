@@ -1,0 +1,98 @@
+﻿@model IEnumerable<QuanLyChiTieu.Models.ChiTieuTheoLich>
+
+@{
+    ViewData["Title"] = "Chi tiêu Định kỳ";
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Danh sách Chi tiêu Định kỳ</h4>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle-fill me-2"></i>Tạo Lịch mới
+        </a>
+    </div>
+    <div class="card-body">
+
+        <h5>Sắp tới</h5>
+        <hr class="mt-2">
+        @if (Model.Any(s => s.HoatDong == true))
+        {
+                <div class="list-group">
+                @foreach (var item in Model.Where(s => s.HoatDong == true).OrderBy(s => s.NgayThucHien))
+                {
+                            <div class="list-group-item schedule-item">
+                                <div class="schedule-color-bar" style="background-color:@item.DanhMuc.MauSac;"></div>
+                                <div class="schedule-icon"><i class="bi bi-calendar-check"></i></div>
+                                <div class="schedule-details">
+                                    <div class="fw-bold">@item.TenChiTieu</div>
+                                    <small class="text-muted">@item.DanhMuc.TenDanhMuc</small>
+                                </div>
+                                <div class="schedule-info ms-auto text-end">
+                                    <div class="fw-bold text-danger">@item.SoTien.ToString("N0") ₫</div>
+                                    <small>Vào ngày @item.NgayThucHien.ToString("dd/MM/yyyy")</small>
+                                </div>
+                                <div class="schedule-actions">
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lịch chi tiêu này?');">
+                                @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-icon-only" title="Xóa"><i class="bi bi-x-lg"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                }
+                </div>
+        }
+        else
+        {
+                <p class="text-muted text-center p-3">Không có lịch chi tiêu nào sắp tới.</p>
+        }
+
+        <h5 class="mt-4">Đã hoàn thành</h5>
+        <hr class="mt-2">
+        @if (Model.Any(s => s.HoatDong == false))
+        {
+                <div class="list-group">
+                @foreach (var item in Model.Where(s => s.HoatDong == false).OrderByDescending(s => s.LanThucHienCuoi))
+                {
+                            <div class="list-group-item schedule-item completed">
+                                 <div class="schedule-color-bar" style="background-color:@item.DanhMuc.MauSac;"></div>
+                                <div class="schedule-icon"><i class="bi bi-check-circle-fill text-success"></i></div>
+                                <div class="schedule-details">
+                                    <div class="fw-bold">@item.TenChiTieu</div>
+                                    <small class="text-muted">@item.DanhMuc.TenDanhMuc</small>
+                                </div>
+                                <div class="schedule-info ms-auto text-end">
+                                    <div class="fw-bold text-danger">@item.SoTien.ToString("N0") ₫</div>
+                                    <small>Đã thực hiện: @item.LanThucHienCuoi?.ToString("dd/MM/yyyy")</small>
+                                </div>
+                                 <div class="schedule-actions">
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lịch chi tiêu này?');">
+                                @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-icon-only" title="Xóa"><i class="bi bi-x-lg"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                }
+                </div>
+        }
+        else
+        {
+                <p class="text-muted text-center p-3">Chưa có lịch chi tiêu nào hoàn thành.</p>
+        }
+    </div>
+</div>
+
+@section Scripts {
+        <style>
+            .schedule-item { display: flex; align-items: center; gap: 1rem; padding-left: 0.75rem; border-left: 5px solid transparent; position: relative; }
+            .schedule-color-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; border-top-left-radius: 0.25rem; border-bottom-left-radius: 0.25rem; }
+            .schedule-icon { font-size: 1.5rem; color: var(--primary-color); }
+            .schedule-details, .schedule-info { line-height: 1.2; }
+            .schedule-actions { opacity: 0; transition: opacity 0.2s ease-in-out; }
+            .schedule-item:hover .schedule-actions { opacity: 1; }
+            .btn-icon-only { background: none; border: none; color: var(--text-color); }
+            .btn-icon-only:hover { color: var(--danger-color); }
+            .schedule-item.completed { opacity: 0.7; }
+            .schedule-item.completed .schedule-details div { text-decoration: line-through; }
+        </style>
+}
