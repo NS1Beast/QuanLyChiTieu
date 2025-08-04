@@ -38,6 +38,9 @@ public partial class NguoiDung
     public string? AvatarUrl { get; set; }
 
     [InverseProperty("NguoiDung")]
+    public virtual ICollection<ChiTieuTheoLich> ChiTieuTheoLiches { get; set; } = new List<ChiTieuTheoLich>();
+
+    [InverseProperty("NguoiDung")]
     public virtual ICollection<ChiTieu> ChiTieus { get; set; } = new List<ChiTieu>();
 
     [InverseProperty("NguoiDung")]
